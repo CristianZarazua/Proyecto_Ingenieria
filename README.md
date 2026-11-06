@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/Logotipo corporativo Orvant Technologies.png" alt="Orvant Technologies" width="420" />
+  <img src="assets/Logotipo%20corporativo%20Orvant%20Technologies.png" alt="Orvant Technologies" width="420" />
 </p>
 
 <h1 align="center">Proyecto de Ingeniería de Software</h1>
@@ -17,7 +17,7 @@
 
 ## Sobre el proyecto
 
-Este repositorio corresponde al **Proyecto de Ingeniería** desarrollado por **Orvant Technologies** como parte de la asignatura homónima. Su propósito es **exclusivo** para el alojamiento, las pruebas y el despliegue del proyecto académico.
+Este repositorio corresponde al **Proyecto de Ingeniería de Software** desarrollado por **Orvant Technologies** como parte de la asignatura homónima. Su propósito es **exclusivo** para el alojamiento, las pruebas y el despliegue del proyecto académico.
 
 El contenido aquí presente —código, scripts, documentación y recursos— debe utilizarse de forma **ética y adecuada**, respetando las normas de la institución y la propiedad intelectual de la empresa.
 
@@ -37,11 +37,15 @@ Este repositorio forma parte de su línea de formación académica de los integr
 - **Pruebas** y validación de funcionalidades.
 - **Despliegue** de versiones para revisión académica.
 
-> El repositorio es **privado**. El acceso está limitado a los integrantes del equipo y a los evaluadores autorizados.
+> El repositorio es **privado**. El acceso y cambios en este será limitado a los integrantes del equipo y a los evaluadores autorizados.
 
 ---
 
 ## Estructura del proyecto
 
+La organización de carpetas y archivos se definirá conforme avance el desarrollo del proyecto.
+
 ```text
-*Por definir*
+Proyecto_Ingenieria/
+├── assets/          # Identidad visual (logos corporativos)
+└── README.md
