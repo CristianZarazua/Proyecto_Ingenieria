@@ -37,7 +37,7 @@ Este repositorio forma parte de su línea de formación académica de los integr
 - **Pruebas** y validación de funcionalidades.
 - **Despliegue** de versiones para revisión académica.
 
-> El repositorio es **privado**. El acceso y cambios en este será limitado a los integrantes del equipo y a los evaluadores autorizados.
+> Aunque el repositorio es **público**. El acceso y cambios en este será limitado a los integrantes del equipo y a los evaluadores autorizados.
 
 ---
 
