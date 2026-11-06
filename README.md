@@ -40,7 +40,7 @@ Este repositorio forma parte de su línea de formación académica de los integr
 ---
 
 <p align="center">
-  <img src="assets/Logotipo tecnológico azul ORVANT.png" alt="Orvant Technologies" width="420" />
+  <img src="assets/Logotipo_tecnológico_azul_ORVANT.png" alt="Orvant Technologies Official Logo" width="420" />
 </p>
 
 ### Acceso restringido
