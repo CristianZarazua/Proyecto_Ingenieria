@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/Logotipo%20corporativo%20Orvant%20Technologies.png" alt="Orvant Technologies" width="420" />
+  <img src="assets/Logotipo_corporativo_Orvant_Technologies.png" alt="Orvant Technologies" width="420" />
 </p>
 
 <h1 align="center">Proyecto de Ingeniería de Software</h1>
