@@ -43,7 +43,7 @@ Este repositorio forma parte de su línea de formación académica de los integr
   <img src="assets/Logotipo tecnológico azul ORVANT.png" alt="Orvant Technologies" width="420" />
 </p>
 
-<h1 align="center"> Aunque el repositorio es **público**. El acceso y cambios en este será limitado a los integrantes del equipo y a los evaluadores autorizados.</h1>>
+<h1 align="center"> Aunque el repositorio es **público**. El acceso y cambios en este será limitado a los integrantes del equipo y a los evaluadores autorizados.</h1>
 
 ---
 
