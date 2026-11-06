@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>Orvant Technologies</strong><br />
-  Repositorio privado de uso académico
+  Repositorio de uso académico
 </p>
 
 ---
