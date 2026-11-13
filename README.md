@@ -60,7 +60,7 @@ Plataforma web desarrollada para la Unidad de Planeación y las Coordinaciones d
 * **Frontend:** Next.js (App Router), React, TypeScript y Tailwind CSS.
 * **Backend:** NestJS, Node.js y TypeORM.
 * **Base de Datos:** MariaDB.
-* **Servidor / Entorno:** Debian Linux.
+* **Servidor / Entorno de Pruebas:** Debian Linux Server + SSH.
 
 ---
 
