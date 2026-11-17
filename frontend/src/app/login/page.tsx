@@ -30,8 +30,8 @@ export default function LoginPage() {
       if (resultado.codigoSimulado) {
         setCodigoPrueba(resultado.codigoSimulado);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al solicitar acceso.');
     }
   };
 
@@ -42,9 +42,10 @@ export default function LoginPage() {
     try {
       await apiSistema.verificarOtp(email, codigoOtp);
       router.push('/tablero');
-    } catch (err: any) {
-      setError(err.message);
-      if (err.message.includes('bloqueada')) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al verificar código.';
+      setError(msg);
+      if (msg.includes('bloqueada')) {
         setEsperandoOtp(false);
         setCodigoOtp('');
         setCodigoPrueba(null);
@@ -53,13 +54,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-[#0B2545] px-4 py-12">
-      <div className="mx-auto w-full max-w-md rounded-xl border border-slate-700 bg-white p-8 shadow-2xl">
+    <div className="fondo-unam-animado flex min-h-screen flex-col justify-center px-4 py-12">
+      <div className="mx-auto w-full max-w-md rounded-xl border border-amber-400/30 bg-white/95 p-8 shadow-2xl backdrop-blur-sm">
         <div className="mb-6 border-b border-slate-200 pb-4 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#134074]">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#B5892E]">
             UNAM • FES Acatlán
           </p>
-          <h1 className="mt-1 text-xl font-bold text-slate-900">
+          <h1 className="mt-1 text-xl font-bold text-[#0B2545]">
             Seguimiento a la Mejora Continua
           </h1>
           <p className="mt-1 text-xs text-slate-500">
@@ -77,7 +78,7 @@ export default function LoginPage() {
           <div className="mb-4 rounded border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
             {info}
             {codigoPrueba && (
-              <div className="mt-2 rounded bg-white p-2 font-mono text-xs text-slate-800 border border-blue-200">
+              <div className="mt-2 rounded border border-blue-200 bg-white p-2 font-mono text-xs text-slate-800">
                 Modo prueba local (sin SMTP activo) — Código generado: <strong>{codigoPrueba}</strong>
               </div>
             )}

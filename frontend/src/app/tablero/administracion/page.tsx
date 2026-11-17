@@ -9,10 +9,8 @@ export default function AdministracionPage() {
   const [licenciaturas, setLicenciaturas] = useState<Licenciatura[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
 
-  // Alta dinamica de licenciatura
   const [nuevaCarrera, setNuevaCarrera] = useState('');
 
-  // Registro de nuevo usuario
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [emailUsuario, setEmailUsuario] = useState('');
   const [rolUsuario, setRolUsuario] = useState<RolUsuario>('JEFATURA');
@@ -45,8 +43,8 @@ export default function AdministracionPage() {
       setNuevaCarrera('');
       setMensaje('Nueva licenciatura incorporada al catálogo operativo.');
       cargarDatos();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al registrar licenciatura.');
     }
   };
 
@@ -70,8 +68,8 @@ export default function AdministracionPage() {
       setEmailUsuario('');
       setMensaje('Cuenta registrada correctamente. El usuario ya puede solicitar su código OTP.');
       cargarDatos();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al registrar cuenta.');
     }
   };
 
@@ -118,10 +116,9 @@ export default function AdministracionPage() {
         </div>
       )}
 
-      {/* Formulario de Registro de Usuarios */}
       <form
         onSubmit={manejarRegistroUsuario}
-        className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm text-sm"
+        className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm"
       >
         <h2 className="text-base font-bold text-slate-800">
           {esAdmin ? 'Registrar Nueva Cuenta Institucional' : 'Registrar Segunda Cuenta de Coordinación'}
@@ -199,7 +196,6 @@ export default function AdministracionPage() {
         </div>
       </form>
 
-      {/* Tabla de Usuarios y Desbloqueos */}
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-3">
           <h2 className="text-sm font-bold text-slate-800">
@@ -208,7 +204,7 @@ export default function AdministracionPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase">
+            <thead className="bg-slate-50 uppercase text-slate-600">
               <tr>
                 <th className="px-4 py-3">Nombre</th>
                 <th className="px-4 py-3">Correo Institucional</th>
@@ -255,7 +251,6 @@ export default function AdministracionPage() {
         </div>
       </div>
 
-      {/* Catalogo Dinamico de Licenciaturas (Solo Administrador) */}
       {esAdmin && (
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-bold text-slate-800">

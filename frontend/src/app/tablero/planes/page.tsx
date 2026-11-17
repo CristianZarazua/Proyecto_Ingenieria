@@ -13,11 +13,9 @@ export default function PlanesPage() {
   const [planes, setPlanes] = useState<RecomendacionPlan[]>([]);
   const [notificacion, setNotificacion] = useState('');
 
-  // Estados para previsualizacion PDF y ajuste de fechas
   const [pdfVisor, setPdfVisor] = useState<{ titulo: string; url: string | null } | null>(null);
   const [planAjusteFecha, setPlanAjusteFecha] = useState<RecomendacionPlan | null>(null);
 
-  // Formulario de nueva recomendacion (Jefatura)
   const [mostrarForm, setMostrarForm] = useState(false);
   const [categoria, setCategoria] = useState('');
   const [indicador, setIndicador] = useState('');
@@ -29,7 +27,6 @@ export default function PlanesPage() {
   const [archivoNombre, setArchivoNombre] = useState<string | null>(null);
   const [archivoUrl, setArchivoUrl] = useState<string | null>(null);
 
-  // Observaciones de revision (Planeador / Admin)
   const [observacionesTemp, setObservacionesTemp] = useState<Record<number, string>>({});
 
   const recargar = (sesionActual: Usuario, carreraId: number) => {
@@ -217,7 +214,7 @@ export default function PlanesPage() {
           <h2 className="mb-4 text-base font-bold text-slate-800">
             Registrar Recomendación y Evidencia Probatoria
           </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
             <div>
               <label className="mb-1 block font-medium text-slate-700">Categoría / Criterio</label>
               <input
@@ -364,7 +361,7 @@ export default function PlanesPage() {
                       onClick={() =>
                         setPdfVisor({ titulo: plan.archivoPdfNombre!, url: plan.archivoPdfUrl })
                       }
-                      className="rounded bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#134074] border border-blue-200 hover:bg-blue-100"
+                      className="rounded border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#134074] hover:bg-blue-100"
                     >
                       Previsualizar PDF: {plan.archivoPdfNombre}
                     </button>
@@ -397,7 +394,7 @@ export default function PlanesPage() {
               )}
 
               {esPlaneacion && (
-                <div className="mt-4 rounded bg-slate-50 p-3 border border-slate-200">
+                <div className="mt-4 rounded border border-slate-200 bg-slate-50 p-3">
                   <label className="mb-1 block text-xs font-semibold text-slate-700">
                     Dictamen y comentarios para la coordinación (envía alerta en sistema y correo):
                   </label>

@@ -9,8 +9,7 @@ export default function TicketsPage() {
   const [licenciaturas, setLicenciaturas] = useState<Licenciatura[]>([]);
   const [tickets, setTickets] = useState<TicketProceso[]>([]);
 
-  // Formulario de nuevo ticket (Jefatura)
-  const [tipo, setTipo] = useState<'PRORROGA_FECHA' | 'DUDA_PROCEDIMIENTO' | 'ACLARACION_OBSERVACION'>('PRORROGA_FECHA');
+  const [tipo, setTipo] = useState<TicketProceso['tipo']>('PRORROGA_FECHA');
   const [asunto, setAsunto] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [respuestas, setRespuestas] = useState<Record<number, string>>({});
@@ -90,7 +89,7 @@ export default function TicketsPage() {
       {usuario.rol === 'JEFATURA' && (
         <form
           onSubmit={enviarTicket}
-          className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm text-sm"
+          className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm"
         >
           <h2 className="text-base font-bold text-slate-800">Levantar Nueva Solicitud a Planeación</h2>
 
@@ -99,7 +98,7 @@ export default function TicketsPage() {
               <label className="mb-1 block font-medium text-slate-700">Motivo de la solicitud</label>
               <select
                 value={tipo}
-                onChange={(e) => setTipo(e.target.value as any)}
+                onChange={(e) => setTipo(e.target.value as TicketProceso['tipo'])}
                 className="w-full rounded border border-slate-300 px-3 py-2"
               >
                 <option value="PRORROGA_FECHA">Solicitud de Prórroga / Cambio de Fecha</option>

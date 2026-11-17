@@ -53,7 +53,7 @@ export default function ModalAjusteFecha({ plan, onGuardar, onCerrar }: ModalAju
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4 rounded bg-slate-50 p-3 border border-slate-200">
+          <div className="grid grid-cols-2 gap-4 rounded border border-slate-200 bg-slate-50 p-3">
             <div>
               <span className="block text-xs text-slate-500">Fecha actual registrada</span>
               <strong className="text-slate-800">{plan.fechaCumplimiento}</strong>

@@ -23,7 +23,6 @@ const CLAVES_STORAGE = {
 
 const DOMINIO_INSTITUCIONAL = '@pcpuma.acatlan.unam.mx';
 
-// PDF minimo valido codificado en Base64 para previsualizar el registro de muestra
 const PDF_MUESTRA_BASE64 =
   'data:application/pdf;base64,JVBERi0xLjMKMyAwIG9iago8PC9UeXBlIC9QYWdlCi9QYXJlbnQgMSAwIFIKL1Jlc291cmNlcyA8PC9Gb250IDw8L0YxIDIgMCBSPj4+PgovQ29udGVudHMgNCAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDY4Pj4Kc3RyZWFtCkJUCi9GMSAxNCBUZgo1MCA3NTAgVGQKKERvY3VtZW50byBkZSBFdmlkZW5jaWEgUERGIC0gRkVTIEFjYXRsYW4pIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKMSAwIG9iago8PC9UeXBlIC9QYWdlcwovS2lkcyBbMyAwIFJdCi9Db3VudCAxCi9NZWRpYUJveCBbMCAwIDU5NSA4NDJdCj4+CmVuZG9iagoyIDAgb2Jqago8PC9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYQo+PgplbmRvYmoKNSAwIG9iago8PC9UeXBlIC9DYXRhbG9nCi9QYWdlcyAxIDAgUgo+PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMjE1IDAwMDAwIG4gCjAwMDAwMDAyOTQgMDAwMDAgbiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDk4IDAwMDAwIG4gCjAwMDAwMDAzNjAgMDAwMDAgbiAKdHJhaWxlcgo8PC9TaXplIDYKL1Jvb3QgNSAwIFIKPj4Kc3RhcnR4cmVmCjQwOQpPRg==';
 
@@ -47,7 +46,6 @@ export const apiSistema = {
     return email.trim().toLowerCase().endsWith(DOMINIO_INSTITUCIONAL);
   },
 
-  // Paso 1 de autenticacion: valida dominio, verifica bloqueo y genera OTP de 6 digitos
   async solicitarAcceso(emailInput: string): Promise<{ requiereOtp: boolean; codigoSimulado?: string; usuario?: Usuario }> {
     const email = emailInput.trim().toLowerCase();
 
@@ -70,7 +68,6 @@ export const apiSistema = {
       );
     }
 
-    // El Administrador principal accede sin requerir verificacion OTP
     if (usuario.rol === 'ADMINISTRADOR') {
       usuario.intentosFallidos = 0;
       usuarios[indice] = usuario;
@@ -79,7 +76,6 @@ export const apiSistema = {
       return { requiereOtp: false, usuario };
     }
 
-    // Generacion de codigo numerico de 6 digitos para Planeadores y Jefaturas
     const codigoOtp = Math.floor(100000 + Math.random() * 900000).toString();
     usuario.codigoOtp = codigoOtp;
     usuarios[indice] = usuario;
@@ -91,7 +87,6 @@ export const apiSistema = {
     };
   },
 
-  // Paso 2 de autenticacion: comprueba OTP y aplica bloqueo al tercer fallo consecutivo
   async verificarOtp(emailInput: string, codigoIngresado: string): Promise<Usuario> {
     const email = emailInput.trim().toLowerCase();
     const usuarios = leerColeccion<Usuario>(CLAVES_STORAGE.USUARIOS, USUARIOS_INICIALES);
@@ -191,7 +186,6 @@ export const apiSistema = {
       throw new Error('Este correo institucional ya tiene una cuenta registrada.');
     }
 
-    // Regla de negocio: maximo 2 cuentas de nivel bajo (JEFATURA) por licenciatura
     if (datos.rol === 'JEFATURA') {
       if (!datos.licenciaturaId) {
         throw new Error('Debe seleccionar una licenciatura para la cuenta de Jefatura o Auxiliar.');

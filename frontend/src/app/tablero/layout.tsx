@@ -48,18 +48,18 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      <aside className="flex w-64 flex-col bg-[#0B2545] text-white">
-        <div className="border-b border-slate-700 px-5 py-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-300">
+      <aside className="sidebar-unam-animada flex w-64 flex-col text-white shadow-xl">
+        <div className="border-b border-white/15 px-5 py-5">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
             FES Acatlán • UNAM
           </p>
-          <h2 className="mt-1 text-base font-bold leading-tight">
+          <h2 className="mt-1 text-base font-bold leading-tight text-white">
             Mejora Continua
           </h2>
-          <p className="mt-1 text-xs text-slate-400">Unidad de Planeación</p>
+          <p className="mt-1 text-xs text-slate-200/80">Unidad de Planeación</p>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1.5 px-3 py-4">
           {enlaces.map((item) => {
             const activo = pathname === item.href;
             return (
@@ -68,8 +68,8 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
                 href={item.href}
                 className={`block rounded-md px-3 py-2.5 text-sm font-medium transition ${
                   activo
-                    ? 'bg-[#134074] text-white shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'border-l-4 border-[#D4AF37] bg-white/15 text-white shadow-sm backdrop-blur-sm'
+                    : 'text-slate-100/90 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {item.label}
@@ -78,7 +78,7 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
           })}
         </nav>
 
-        <div className="border-t border-slate-700 p-4 text-xs text-slate-400">
+        <div className="border-t border-white/15 p-4 text-xs text-slate-200/75">
           ORVANT Technologies • 2026
         </div>
       </aside>
@@ -86,7 +86,7 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3.5">
           <div>
-            <span className="inline-block rounded bg-[#0B2545] px-2.5 py-0.5 text-[11px] font-semibold text-white">
+            <span className="inline-block rounded bg-[#0B2545] px-2.5 py-0.5 text-[11px] font-semibold text-amber-300">
               {usuario.rol}
             </span>
             {nombreCarrera && (
