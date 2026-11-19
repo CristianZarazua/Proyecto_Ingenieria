@@ -1,22 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
+  --background: #F8FAFC;
+  --foreground: #0f172a;
 }
 
 body {
@@ -26,27 +13,13 @@ body {
 }
 
 @keyframes flujoUnam {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .fondo-unam-animado {
-  background: linear-gradient(
-    -45deg,
-    #071930,
-    #0B2545,
-    #134074,
-    #B5892E,
-    #134074,
-    #0B2545
-  );
+  background: linear-gradient(-45deg, #071930, #0B2545, #134074, #B5892E, #134074, #0B2545);
   background-size: 320% 320%;
   animation: flujoUnam 14s ease infinite;
 }
@@ -54,20 +27,9 @@ body {
 .sidebar-unam-animada {
   background:
     linear-gradient(rgba(7, 22, 43, 0.36), rgba(7, 22, 43, 0.44)),
-    linear-gradient(
-      -45deg,
-      #071930,
-      #0B2545,
-      #134074,
-      #C59B27,
-      #0B2545
-    );
+    linear-gradient(-45deg, #071930, #0B2545, #134074, #C59B27, #0B2545);
   background-size: 100% 100%, 320% 320%;
   animation: flujoUnam 15s ease infinite;
-}
-
-:root {
-  color-scheme: light;
 }
 
 input:not([type="checkbox"]):not([type="radio"]),

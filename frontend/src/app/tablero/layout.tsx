@@ -10,7 +10,7 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const pathname = usePathname();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [nombreCarrera, setNombreCarrera] = useState<string>('');
+  const [nombreCarrera, setNombreCarrera] = useState('');
 
   useEffect(() => {
     const sesion = apiSistema.obtenerSesion();
@@ -20,10 +20,12 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
     }
     setUsuario(sesion);
     if (sesion.licenciaturaId) {
-      const lic = apiSistema
-        .obtenerLicenciaturas()
-        .find((l) => l.id === sesion.licenciaturaId);
-      setNombreCarrera(lic ? lic.nombre : '');
+      apiSistema.obtenerLicenciaturas()
+        .then((lics) => {
+          const lic = lics.find((l) => l.id === sesion.licenciaturaId);
+          setNombreCarrera(lic ? lic.nombre : '');
+        })
+        .catch(() => {});
     }
   }, [router]);
 
@@ -35,27 +37,20 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
   if (!usuario) return null;
 
   const enlaces = [
-    { href: '/tablero', label: 'Resumen General' },
-    { href: '/tablero/planes', label: 'Planes y Evidencias PDF' },
-    { href: '/tablero/tickets', label: 'Tickets de Proceso' },
+    { href: '/tablero', label: 'Inicio' },
+    { href: '/tablero/planes', label: 'Captura y Consulta del Plan' },
   ];
 
   if (usuario.rol === 'ADMINISTRADOR') {
-    enlaces.push({ href: '/tablero/administracion', label: 'Catálogo, Cuentas y Desbloqueos' });
-  } else if (usuario.rol === 'JEFATURA') {
-    enlaces.push({ href: '/tablero/administracion', label: 'Cuentas de Coordinación (Máx. 2)' });
+    enlaces.push({ href: '/tablero/administracion', label: 'Cuentas, Catálogos y Ciclos' });
   }
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      <aside className="sidebar-unam-animada flex w-64 flex-col text-white shadow-xl">
+      <aside className="sidebar-unam-animada flex w-64 flex-col bg-[#0B2545] text-white shadow-xl">
         <div className="border-b border-white/15 px-5 py-5">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
-            FES Acatlán • UNAM
-          </p>
-          <h2 className="mt-1 text-base font-bold leading-tight text-white">
-            Mejora Continua
-          </h2>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-300">FES Acatlán • UNAM</p>
+          <h2 className="mt-1 text-base font-bold leading-tight text-white">Mejora Continua</h2>
           <p className="mt-1 text-xs text-slate-200/80">Unidad de Planeación</p>
         </div>
 
@@ -68,7 +63,7 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
                 href={item.href}
                 className={`block rounded-md px-3 py-2.5 text-sm font-medium transition ${
                   activo
-                    ? 'border-l-4 border-[#D4AF37] bg-white/15 text-white shadow-sm backdrop-blur-sm'
+                    ? 'border-l-4 border-[#D4AF37] bg-white/15 text-white shadow-sm'
                     : 'text-slate-100/90 hover:bg-white/10 hover:text-white'
                 }`}
               >
@@ -78,9 +73,7 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
           })}
         </nav>
 
-        <div className="border-t border-white/15 p-4 text-xs text-slate-200/75">
-          ORVANT Technologies • 2026
-        </div>
+        <div className="border-t border-white/15 p-4 text-xs text-slate-200/75">ORVANT Technologies • 2026</div>
       </aside>
 
       <div className="flex flex-1 flex-col">
@@ -90,9 +83,7 @@ export default function TableroLayout({ children }: { children: React.ReactNode 
               {usuario.rol}
             </span>
             {nombreCarrera && (
-              <span className="ml-2 text-xs font-semibold text-[#134074]">
-                Licenciatura en {nombreCarrera}
-              </span>
+              <span className="ml-2 text-xs font-semibold text-[#134074]">Licenciatura en {nombreCarrera}</span>
             )}
           </div>
 

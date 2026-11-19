@@ -1,6 +1,5 @@
-export type RolUsuario = 'ADMINISTRADOR' | 'PLANEADOR' | 'JEFATURA';
-
-export type EstatusDocumento = 'BORRADOR' | 'ENVIADO' | 'DEVUELTO' | 'VALIDADO';
+export type RolUsuario = 'ADMINISTRADOR' | 'JEFATURA';
+export type TipoCuenta = 'ADMIN' | 'TITULAR' | 'AUXILIAR';
 
 export interface Licenciatura {
   id: number;
@@ -13,46 +12,80 @@ export interface Usuario {
   nombre: string;
   email: string;
   rol: RolUsuario;
+  tipoCuenta: TipoCuenta;
   licenciaturaId: number | null;
-  intentosFallidos: number;
+  licenciaturaNombre?: string | null;
+  activo: boolean;
   bloqueado: boolean;
-  codigoOtp?: string;
 }
 
-export interface CambioFecha {
+export interface CatCategoria {
   id: number;
-  fechaAnterior: string;
-  fechaNueva: string;
-  motivo: string;
-  autor: string;
-  fechaRegistro: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface CatIndicador {
+  id: number;
+  categoriaId: number;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface CatAreaResponsable {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface CatPorcentajeAvance {
+  id: number;
+  valor: number;
+  etiqueta: string;
+  activo: boolean;
+}
+
+export interface CatOrganismo {
+  id: number;
+  siglas: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface CatalogosSistema {
+  categorias: CatCategoria[];
+  indicadores: CatIndicador[];
+  areas: CatAreaResponsable[];
+  porcentajes: CatPorcentajeAvance[];
+  organismos: CatOrganismo[];
+}
+
+export interface CicloAcreditacion {
+  id: number;
+  licenciaturaId: number;
+  licenciaturaNombre: string;
+  organismoId: number;
+  organismoSiglas: string;
+  organismoNombre: string;
+  fechaAcreditacion: string;
+  activo: boolean;
 }
 
 export interface RecomendacionPlan {
   id: number;
+  cicloId: number;
+  cicloEtiqueta: string;
   licenciaturaId: number;
-  categoria: string;
-  indicador: string;
+  licenciaturaNombre: string;
+  categoriaId: number;
+  categoriaNombre: string;
+  indicadorId: number;
+  indicadorNombre: string;
+  areaResponsableId: number;
+  areaResponsableNombre: string;
   recomendacion: string;
   acciones: string;
-  metaMedible: string;
+  meta: string;
   fechaCumplimiento: string;
-  porcentajeAvance: number;
-  estatus: EstatusDocumento;
-  observacionesPlaneacion: string;
-  archivoPdfNombre: string | null;
-  archivoPdfUrl: string | null;
-  historialFechas: CambioFecha[];
-}
-
-export interface TicketProceso {
-  id: number;
-  licenciaturaId: number;
-  creadoPor: string;
-  tipo: 'PRORROGA_FECHA' | 'DUDA_PROCEDIMIENTO' | 'ACLARACION_OBSERVACION';
-  asunto: string;
-  descripcion: string;
-  respuestaPlaneacion: string;
-  estatus: 'ABIERTO' | 'RESUELTO';
-  fechaCreacion: string;
+  fechaRegistro: string;
 }

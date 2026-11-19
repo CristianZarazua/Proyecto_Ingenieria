@@ -162,10 +162,8 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setEmail('revisor.acreditacion@pcpuma.acatlan.unam.mx')}
               className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-200"
             >
-              Planeador
             </button>
             <button
               type="button"

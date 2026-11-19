@@ -2,291 +2,378 @@
 
 import { useEffect, useState } from 'react';
 import { apiSistema } from '@/servicios/apiSistema';
-import { Usuario, Licenciatura, RolUsuario } from '@/tipos/sistema';
+import {
+  Usuario,
+  Licenciatura,
+  CatalogosSistema,
+  CicloAcreditacion,
+  RolUsuario,
+  TipoCuenta,
+} from '@/tipos/sistema';
 
 export default function AdministracionPage() {
   const [sesion, setSesion] = useState<Usuario | null>(null);
-  const [licenciaturas, setLicenciaturas] = useState<Licenciatura[]>([]);
+  const [tab, setTab] = useState<'cuentas' | 'catalogos' | 'ciclos'>('cuentas');
+
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-
-  const [nuevaCarrera, setNuevaCarrera] = useState('');
-
-  const [nombreUsuario, setNombreUsuario] = useState('');
-  const [emailUsuario, setEmailUsuario] = useState('');
-  const [rolUsuario, setRolUsuario] = useState<RolUsuario>('JEFATURA');
-  const [carreraUsuario, setCarreraUsuario] = useState<number>(17);
+  const [licenciaturas, setLicenciaturas] = useState<Licenciatura[]>([]);
+  const [catalogos, setCatalogos] = useState<CatalogosSistema | null>(null);
+  const [ciclos, setCiclos] = useState<CicloAcreditacion[]>([]);
 
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
 
-  const cargarDatos = () => {
-    setLicenciaturas(apiSistema.obtenerLicenciaturas());
-    setUsuarios(apiSistema.obtenerUsuarios());
+  // Form Cuentas (PB-02)
+  const [editUsuarioId, setEditUsuarioId] = useState<number | null>(null);
+  const [nombreUsr, setNombreUsr] = useState('');
+  const [emailUsr, setEmailUsr] = useState('');
+  const [rolUsr, setRolUsr] = useState<RolUsuario>('JEFATURA');
+  const [tipoCuentaUsr, setTipoCuentaUsr] = useState<TipoCuenta>('TITULAR');
+  const [licUsr, setLicUsr] = useState<number>(1);
+  const [activoUsr, setActivoUsr] = useState<boolean>(true);
+
+  // Form Licenciaturas y Ciclos (PB-05)
+  const [nombreLic, setNombreLic] = useState('');
+  const [cicloLicId, setCicloLicId] = useState<number>(1);
+  const [cicloOrgId, setCicloOrgId] = useState<number>(1);
+  const [cicloFecha, setCicloFecha] = useState('');
+
+  // Form Catalogos (PB-04)
+  const [tipoCat, setTipoCat] = useState<'categorias' | 'indicadores' | 'areas' | 'porcentajes' | 'organismos'>('categorias');
+  const [editCatId, setEditCatId] = useState<number | null>(null);
+  const [catNombre, setCatNombre] = useState('');
+  const [catExtra, setCatExtra] = useState('');
+  const [catPadreId, setCatPadreId] = useState<number>(1);
+  const [catActivo, setCatActivo] = useState<boolean>(true);
+
+  const cargarTodo = async () => {
+    const [usrs, lics, cats, cics] = await Promise.all([
+      apiSistema.obtenerUsuarios(),
+      apiSistema.obtenerLicenciaturas(),
+      apiSistema.obtenerCatalogos(),
+      apiSistema.obtenerCiclos(),
+    ]);
+    setUsuarios(usrs);
+    setLicenciaturas(lics);
+    setCatalogos(cats);
+    setCiclos(cics);
+    if (lics[0]) { setLicUsr(lics[0].id); setCicloLicId(lics[0].id); }
+    if (cats.organismos[0]) setCicloOrgId(cats.organismos[0].id);
+    if (cats.categorias[0]) setCatPadreId(cats.categorias[0].id);
   };
 
   useEffect(() => {
     const actual = apiSistema.obtenerSesion();
     if (!actual) return;
     setSesion(actual);
-    if (actual.licenciaturaId) {
-      setCarreraUsuario(actual.licenciaturaId);
+    if (actual.rol === 'ADMINISTRADOR') {
+      cargarTodo().catch(() => {});
     }
-    cargarDatos();
   }, []);
 
-  const manejarAltaCarrera = (e: React.FormEvent) => {
+  if (!sesion) return null;
+  if (sesion.rol !== 'ADMINISTRADOR') {
+    return (
+      <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800">
+        Acceso denegado: módulo exclusivo para el rol Administrador.
+      </div>
+    );
+  }
+
+  const guardarUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMensaje('');
     try {
-      apiSistema.agregarLicenciatura(nuevaCarrera);
-      setNuevaCarrera('');
-      setMensaje('Nueva licenciatura incorporada al catálogo operativo.');
-      cargarDatos();
+      const payload = {
+        nombre: nombreUsr,
+        email: emailUsr,
+        rol: rolUsr,
+        tipoCuenta: rolUsr === 'ADMINISTRADOR' ? ('ADMIN' as TipoCuenta) : tipoCuentaUsr,
+        licenciaturaId: rolUsr === 'JEFATURA' ? licUsr : null,
+        activo: activoUsr,
+      };
+      if (editUsuarioId) {
+        await apiSistema.editarUsuario(editUsuarioId, payload);
+        setMensaje('Cuenta actualizada correctamente.');
+      } else {
+        await apiSistema.crearUsuario(payload);
+        setMensaje('Cuenta registrada correctamente.');
+      }
+      setEditUsuarioId(null);
+      setNombreUsr('');
+      setEmailUsr('');
+      setActivoUsr(true);
+      await cargarTodo();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar cuenta.');
+    }
+  };
+
+  const iniciarEdicionUsuario = (u: Usuario) => {
+    setEditUsuarioId(u.id);
+    setNombreUsr(u.nombre);
+    setEmailUsr(u.email);
+    setRolUsr(u.rol);
+    setTipoCuentaUsr(u.tipoCuenta);
+    if (u.licenciaturaId) setLicUsr(u.licenciaturaId);
+    setActivoUsr(u.activo);
+  };
+
+  const alternarEstadoUsuario = async (u: Usuario) => {
+    setError('');
+    setMensaje('');
+    try {
+      await apiSistema.cambiarEstadoUsuario(u.id, !u.activo);
+      setMensaje(!u.activo ? 'Cuenta reactivada.' : 'Cuenta desactivada (baja lógica).');
+      await cargarTodo();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo cambiar el estado de la cuenta.');
+    }
+  };
+
+  const guardarLicenciatura = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMensaje('');
+    try {
+      await apiSistema.crearLicenciatura(nombreLic);
+      setNombreLic('');
+      setMensaje('Licenciatura dada de alta.');
+      await cargarTodo();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al registrar licenciatura.');
     }
   };
 
-  const manejarRegistroUsuario = (e: React.FormEvent) => {
+  const guardarCiclo = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMensaje('');
-    if (!sesion) return;
-
-    const rolFinal: RolUsuario = sesion.rol === 'JEFATURA' ? 'JEFATURA' : rolUsuario;
-    const carreraFinal = sesion.rol === 'JEFATURA' ? sesion.licenciaturaId : carreraUsuario;
-
     try {
-      apiSistema.registrarUsuario({
-        nombre: nombreUsuario,
-        email: emailUsuario,
-        rol: rolFinal,
-        licenciaturaId: rolFinal === 'JEFATURA' ? carreraFinal : null,
-      });
-      setNombreUsuario('');
-      setEmailUsuario('');
-      setMensaje('Cuenta registrada correctamente. El usuario ya puede solicitar su código OTP.');
-      cargarDatos();
+      await apiSistema.crearCiclo({ licenciaturaId: cicloLicId, organismoId: cicloOrgId, fechaAcreditacion: cicloFecha });
+      setCicloFecha('');
+      setMensaje('Ciclo de acreditación registrado.');
+      await cargarTodo();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al registrar cuenta.');
+      setError(err instanceof Error ? err.message : 'Error al registrar ciclo.');
     }
   };
 
-  const desbloquear = (id: number) => {
-    apiSistema.desbloquearUsuario(id);
-    setMensaje('Cuenta desbloqueada y contador de intentos restablecido a cero.');
-    cargarDatos();
+  const guardarCatalogo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMensaje('');
+    try {
+      const payload: Record<string, unknown> = { nombre: catNombre, activo: catActivo };
+      if (tipoCat === 'indicadores') payload.categoriaId = catPadreId;
+      if (tipoCat === 'porcentajes') { payload.valor = Number(catExtra); payload.etiqueta = catNombre; }
+      if (tipoCat === 'organismos') { payload.siglas = catExtra; }
+
+      if (editCatId) {
+        await apiSistema.editarCatalogo(tipoCat, editCatId, payload);
+        setMensaje('Elemento de catálogo actualizado.');
+      } else {
+        await apiSistema.crearCatalogo(tipoCat, payload);
+        setMensaje('Elemento agregado al catálogo.');
+      }
+      setEditCatId(null);
+      setCatNombre('');
+      setCatExtra('');
+      setCatActivo(true);
+      await cargarTodo();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar en catálogo.');
+    }
   };
-
-  if (!sesion) return null;
-
-  const esAdmin = sesion.rol === 'ADMINISTRADOR';
-  const usuariosVisibles = esAdmin
-    ? usuarios
-    : usuarios.filter((u) => u.licenciaturaId === sesion.licenciaturaId);
-
-  const nombreCarrera = (id: number | null) =>
-    licenciaturas.find((l) => l.id === id)?.nombre || 'Global (Unidad de Planeación)';
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">
-          {esAdmin
-            ? 'Administración de Licenciaturas, Usuarios y Seguridad'
-            : 'Gestión de Cuentas de Coordinación'}
-        </h1>
-        <p className="text-sm text-slate-600">
-          {esAdmin
-            ? 'Alta dinámica de programas académicos, asignación de cuentas y desbloqueo de accesos.'
-            : 'Cada coordinación dispone de un máximo de 2 cuentas institucionales (@pcpuma.acatlan.unam.mx).'}
-        </p>
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+        <button onClick={() => setTab('cuentas')} className={`rounded px-4 py-2 text-xs font-semibold ${tab === 'cuentas' ? 'bg-[#0B2545] text-white' : 'bg-white text-slate-700 border'}`}>
+          1. Cuentas (PB-02)
+        </button>
+        <button onClick={() => setTab('catalogos')} className={`rounded px-4 py-2 text-xs font-semibold ${tab === 'catalogos' ? 'bg-[#0B2545] text-white' : 'bg-white text-slate-700 border'}`}>
+          2. Catálogos (PB-04)
+        </button>
+        <button onClick={() => setTab('ciclos')} className={`rounded px-4 py-2 text-xs font-semibold ${tab === 'ciclos' ? 'bg-[#0B2545] text-white' : 'bg-white text-slate-700 border'}`}>
+          3. Licenciaturas y Ciclos (PB-05)
+        </button>
       </div>
 
-      {error && (
-        <div className="rounded border border-red-300 bg-red-50 p-3 text-xs font-medium text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <div className="rounded border border-red-300 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</div>}
+      {mensaje && <div className="rounded border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">{mensaje}</div>}
 
-      {mensaje && (
-        <div className="rounded border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
-          {mensaje}
-        </div>
-      )}
+      {tab === 'cuentas' && (
+        <div className="space-y-6">
+          <form onSubmit={guardarUsuario} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm">
+            <h2 className="font-bold text-slate-800">{editUsuarioId ? 'Editar Cuenta' : 'Alta de Cuenta Institucional'} (Máx. 2 activas por licenciatura)</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <input type="text" placeholder="Nombre completo" required value={nombreUsr} onChange={(e) => setNombreUsr(e.target.value)} className="rounded border border-slate-300 px-3 py-2" />
+              <input type="email" placeholder="correo@pcpuma.acatlan.unam.mx" required value={emailUsr} onChange={(e) => setEmailUsr(e.target.value)} className="rounded border border-slate-300 px-3 py-2" />
+              <select value={rolUsr} onChange={(e) => setRolUsr(e.target.value as RolUsuario)} className="rounded border border-slate-300 px-3 py-2">
+                <option value="JEFATURA">Rol: Jefatura</option>
+                <option value="ADMINISTRADOR">Rol: Administrador</option>
+              </select>
 
-      <form
-        onSubmit={manejarRegistroUsuario}
-        className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm"
-      >
-        <h2 className="text-base font-bold text-slate-800">
-          {esAdmin ? 'Registrar Nueva Cuenta Institucional' : 'Registrar Segunda Cuenta de Coordinación'}
-        </h2>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block font-medium text-slate-700">Nombre completo</label>
-            <input
-              type="text"
-              value={nombreUsuario}
-              onChange={(e) => setNombreUsuario(e.target.value)}
-              placeholder="Ej. Mtro. Carlos Hernández"
-              required
-              className="w-full rounded border border-slate-300 px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block font-medium text-slate-700">
-              Correo Institucional (@pcpuma.acatlan.unam.mx)
-            </label>
-            <input
-              type="email"
-              value={emailUsuario}
-              onChange={(e) => setEmailUsuario(e.target.value)}
-              placeholder="cuenta@pcpuma.acatlan.unam.mx"
-              required
-              className="w-full rounded border border-slate-300 px-3 py-2"
-            />
-          </div>
-
-          {esAdmin && (
-            <>
-              <div>
-                <label className="mb-1 block font-medium text-slate-700">Nivel de Acceso (Rol)</label>
-                <select
-                  value={rolUsuario}
-                  onChange={(e) => setRolUsuario(e.target.value as RolUsuario)}
-                  className="w-full rounded border border-slate-300 px-3 py-2"
-                >
-                  <option value="JEFATURA">Jefatura / Auxiliar (Nivel Bajo - Máx. 2 por carrera)</option>
-                  <option value="PLANEADOR">Planeador / Revisor (Nivel Intermedio)</option>
-                  <option value="ADMINISTRADOR">Administrador General</option>
-                </select>
-              </div>
-
-              {rolUsuario === 'JEFATURA' && (
-                <div>
-                  <label className="mb-1 block font-medium text-slate-700">Licenciatura Asignada</label>
-                  <select
-                    value={carreraUsuario}
-                    onChange={(e) => setCarreraUsuario(Number(e.target.value))}
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  >
-                    {licenciaturas.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.nombre}
-                      </option>
-                    ))}
+              {rolUsr === 'JEFATURA' && (
+                <>
+                  <select value={tipoCuentaUsr} onChange={(e) => setTipoCuentaUsr(e.target.value as TipoCuenta)} className="rounded border border-slate-300 px-3 py-2">
+                    <option value="TITULAR">Tipo: Jefatura (Titular)</option>
+                    <option value="AUXILIAR">Tipo: Auxiliar</option>
                   </select>
-                </div>
+                  <select value={licUsr} onChange={(e) => setLicUsr(Number(e.target.value))} className="rounded border border-slate-300 px-3 py-2">
+                    {licenciaturas.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+                  </select>
+                </>
               )}
-            </>
-          )}
-        </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              {editUsuarioId && (
+                <button type="button" onClick={() => { setEditUsuarioId(null); setNombreUsr(''); setEmailUsr(''); }} className="rounded border px-3 py-2 text-xs">
+                  Cancelar
+                </button>
+              )}
+              <button type="submit" className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white">
+                {editUsuarioId ? 'Actualizar Cuenta' : 'Crear Cuenta'}
+              </button>
+            </div>
+          </form>
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white hover:bg-[#134074]"
-          >
-            Guardar Cuenta
-          </button>
-        </div>
-      </form>
-
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-3">
-          <h2 className="text-sm font-bold text-slate-800">
-            Cuentas Registradas ({usuariosVisibles.length})
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 uppercase text-slate-600">
-              <tr>
-                <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Correo Institucional</th>
-                <th className="px-4 py-3">Rol</th>
-                <th className="px-4 py-3">Adscripción</th>
-                <th className="px-4 py-3">Seguridad</th>
-                {esAdmin && <th className="px-4 py-3">Acción</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {usuariosVisibles.map((u) => (
-                <tr key={u.id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">{u.nombre}</td>
-                  <td className="px-4 py-3 text-slate-700">{u.email}</td>
-                  <td className="px-4 py-3 font-semibold text-[#134074]">{u.rol}</td>
-                  <td className="px-4 py-3 text-slate-600">{nombreCarrera(u.licenciaturaId)}</td>
-                  <td className="px-4 py-3">
-                    {u.bloqueado ? (
-                      <span className="rounded bg-red-100 px-2 py-0.5 font-semibold text-red-700">
-                        BLOQUEADA (3/3 intentos)
-                      </span>
-                    ) : (
-                      <span className="rounded bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">
-                        ACTIVA ({u.intentosFallidos}/3 fallos)
-                      </span>
-                    )}
-                  </td>
-                  {esAdmin && (
-                    <td className="px-4 py-3">
-                      {u.bloqueado && (
-                        <button
-                          onClick={() => desbloquear(u.id)}
-                          className="rounded bg-red-700 px-2.5 py-1 font-semibold text-white hover:bg-red-800"
-                        >
-                          Desbloquear
-                        </button>
-                      )}
-                    </td>
-                  )}
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-100 text-slate-700">
+                <tr>
+                  <th className="p-3">Nombre</th>
+                  <th className="p-3">Correo</th>
+                  <th className="p-3">Rol / Tipo</th>
+                  <th className="p-3">Licenciatura</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {usuarios.map((u) => (
+                  <tr key={u.id}>
+                    <td className="p-3 font-medium">{u.nombre}</td>
+                    <td className="p-3">{u.email}</td>
+                    <td className="p-3">{u.rol} ({u.tipoCuenta})</td>
+                    <td className="p-3">{u.licenciaturaNombre || 'Global'}</td>
+                    <td className="p-3">
+                      <span className={`rounded px-2 py-0.5 font-semibold ${u.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                        {u.activo ? 'Activa' : 'Desactivada'}
+                      </span>
+                    </td>
+                    <td className="p-3 space-x-2">
+                      <button onClick={() => iniciarEdicionUsuario(u)} className="text-[#134074] font-semibold hover:underline">Editar</button>
+                      <button onClick={() => alternarEstadoUsuario(u)} className="text-amber-700 font-semibold hover:underline">
+                        {u.activo ? 'Dar de baja' : 'Reactivar'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {esAdmin && (
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-bold text-slate-800">
-            Catálogo Dinámico de Licenciaturas ({licenciaturas.length} registradas)
-          </h2>
-          <p className="mt-1 text-xs text-slate-600">
-            Permite incorporar nuevas carreras al proceso de planeación sin modificar el código del sistema.
-          </p>
+      {tab === 'catalogos' && catalogos && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap gap-2">
+            {(['categorias', 'indicadores', 'areas', 'porcentajes', 'organismos'] as const).map((t) => (
+              <button key={t} onClick={() => { setTipoCat(t); setEditCatId(null); setCatNombre(''); setCatExtra(''); }}
+                className={`rounded px-3 py-1.5 text-xs font-semibold capitalize ${tipoCat === t ? 'bg-[#134074] text-white' : 'bg-white border'}`}>
+                {t}
+              </button>
+            ))}
+          </div>
 
-          <form onSubmit={manejarAltaCarrera} className="mt-4 flex gap-3">
-            <input
-              type="text"
-              value={nuevaCarrera}
-              onChange={(e) => setNuevaCarrera(e.target.value)}
-              placeholder="Nombre de la nueva licenciatura..."
-              required
-              className="flex-1 rounded border border-slate-300 px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white hover:bg-[#134074]"
-            >
-              Agregar Licenciatura
+          <form onSubmit={guardarCatalogo} className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm md:grid-cols-4">
+            {tipoCat === 'indicadores' && (
+              <select value={catPadreId} onChange={(e) => setCatPadreId(Number(e.target.value))} className="rounded border px-3 py-2">
+                {catalogos.categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            )}
+            {tipoCat === 'organismos' && (
+              <input type="text" placeholder="Siglas (ej. CONAIC)" required value={catExtra} onChange={(e) => setCatExtra(e.target.value)} className="rounded border px-3 py-2" />
+            )}
+            {tipoCat === 'porcentajes' && (
+              <input type="number" min={0} max={100} placeholder="Valor numérico (0-100)" required value={catExtra} onChange={(e) => setCatExtra(e.target.value)} className="rounded border px-3 py-2" />
+            )}
+            <input type="text" placeholder="Nombre / Etiqueta" required value={catNombre} onChange={(e) => setCatNombre(e.target.value)} className="rounded border px-3 py-2 md:col-span-2" />
+            <label className="flex items-center gap-2 text-xs">
+              <input type="checkbox" checked={catActivo} onChange={(e) => setCatActivo(e.target.checked)} /> Activo
+            </label>
+            <button type="submit" className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white">
+              {editCatId ? 'Guardar cambios' : 'Agregar'}
             </button>
           </form>
 
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {licenciaturas.map((lic) => (
-              <div
-                key={lic.id}
-                className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800"
-              >
-                {lic.nombre}
+          <div className="rounded-lg border border-slate-200 bg-white p-4 text-xs shadow-sm">
+            {tipoCat === 'categorias' && catalogos.categorias.map((c) => (
+              <div key={c.id} className="flex items-center justify-between border-b py-2">
+                <span>{c.nombre} ({c.activo ? 'Activo' : 'Inactivo'})</span>
+                <button onClick={() => { setEditCatId(c.id); setCatNombre(c.nombre); setCatActivo(c.activo); }} className="text-[#134074] font-semibold">Editar</button>
+              </div>
+            ))}
+            {tipoCat === 'indicadores' && catalogos.indicadores.map((i) => (
+              <div key={i.id} className="flex items-center justify-between border-b py-2">
+                <span>{i.nombre} ({i.activo ? 'Activo' : 'Inactivo'})</span>
+                <button onClick={() => { setEditCatId(i.id); setCatPadreId(i.categoriaId); setCatNombre(i.nombre); setCatActivo(i.activo); }} className="text-[#134074] font-semibold">Editar</button>
+              </div>
+            ))}
+            {tipoCat === 'areas' && catalogos.areas.map((a) => (
+              <div key={a.id} className="flex items-center justify-between border-b py-2">
+                <span>{a.nombre} ({a.activo ? 'Activo' : 'Inactivo'})</span>
+                <button onClick={() => { setEditCatId(a.id); setCatNombre(a.nombre); setCatActivo(a.activo); }} className="text-[#134074] font-semibold">Editar</button>
+              </div>
+            ))}
+            {tipoCat === 'porcentajes' && catalogos.porcentajes.map((p) => (
+              <div key={p.id} className="flex items-center justify-between border-b py-2">
+                <span>{p.valor}% — {p.etiqueta} ({p.activo ? 'Activo' : 'Inactivo'})</span>
+                <button onClick={() => { setEditCatId(p.id); setCatExtra(String(p.valor)); setCatNombre(p.etiqueta); setCatActivo(p.activo); }} className="text-[#134074] font-semibold">Editar</button>
+              </div>
+            ))}
+            {tipoCat === 'organismos' && catalogos.organismos.map((o) => (
+              <div key={o.id} className="flex items-center justify-between border-b py-2">
+                <span><strong>{o.siglas}</strong> — {o.nombre} ({o.activo ? 'Activo' : 'Inactivo'})</span>
+                <button onClick={() => { setEditCatId(o.id); setCatExtra(o.siglas); setCatNombre(o.nombre); setCatActivo(o.activo); }} className="text-[#134074] font-semibold">Editar</button>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === 'ciclos' && (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <form onSubmit={guardarLicenciatura} className="space-y-3 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm">
+            <h2 className="font-bold text-slate-800">Alta de Licenciatura</h2>
+            <input type="text" placeholder="Nombre de la licenciatura" required value={nombreLic} onChange={(e) => setNombreLic(e.target.value)} className="w-full rounded border px-3 py-2" />
+            <button type="submit" className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white">Registrar Licenciatura</button>
+            <ul className="divide-y pt-2 text-xs">
+              {licenciaturas.map((l) => <li key={l.id} className="py-1.5">{l.nombre}</li>)}
+            </ul>
+          </form>
+
+          <form onSubmit={guardarCiclo} className="space-y-3 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm">
+            <h2 className="font-bold text-slate-800">Alta de Ciclo de Acreditación</h2>
+            <select value={cicloLicId} onChange={(e) => setCicloLicId(Number(e.target.value))} className="w-full rounded border px-3 py-2">
+              {licenciaturas.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+            </select>
+            <select value={cicloOrgId} onChange={(e) => setCicloOrgId(Number(e.target.value))} className="w-full rounded border px-3 py-2">
+              {(catalogos?.organismos || []).map((o) => <option key={o.id} value={o.id}>{o.siglas} - {o.nombre}</option>)}
+            </select>
+            <input type="date" required value={cicloFecha} onChange={(e) => setCicloFecha(e.target.value)} className="w-full rounded border px-3 py-2" />
+            <button type="submit" className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white">Registrar Ciclo</button>
+            <ul className="divide-y pt-2 text-xs">
+              {ciclos.map((c) => (
+                <li key={c.id} className="py-1.5">
+                  <strong>{c.licenciaturaNombre}</strong> • {c.organismoSiglas} ({c.fechaAcreditacion})
+                </li>
+              ))}
+            </ul>
+          </form>
         </div>
       )}
     </div>
