@@ -65,3 +65,20 @@ body {
   background-size: 100% 100%, 320% 320%;
   animation: flujoUnam 15s ease infinite;
 }
+
+:root {
+  color-scheme: light;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+}
