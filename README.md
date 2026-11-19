@@ -51,66 +51,98 @@ Aunque el repositorio es **público**, el acceso y los cambios están limitados 
 
 # Sistema de Seguimiento a la Mejora Continua (FES Acatlán)
 
-Plataforma web desarrollada para la Unidad de Planeación y las Coordinaciones de Programa de la Facultad de Estudios Superiores Acatlán (UNAM). Centraliza la captura, revisión, validación y consulta histórica de los Planes de Mejora Continua y los Informes de Seguimiento derivados de los procesos de acreditación.
+Plataforma web desarrollada para la **Unidad de Planeación** y las **Jefaturas de Programa** de la Facultad de Estudios Superiores Acatlán (UNAM). En su **Sprint 1**, centraliza el control de acceso institucional, la administración de cuentas y catálogos dinámicos, la configuración de ciclos de acreditación y la captura estructurada de los Planes de Mejora Continua por licenciatura.
 
 ---
 
 ## Stack Tecnológico
 
-* **Frontend:** Next.js (App Router), React, TypeScript y Tailwind CSS.
-* **Backend:** NestJS, Node.js y TypeORM.
-* **Base de Datos:** MariaDB.
-* **Servidor / Entorno de Pruebas:** Debian Linux Server + SSH.
+- **Frontend:** Next.js (App Router), React, TypeScript y Tailwind CSS.
+- **Backend:** Node.js, Express, TypeScript, JWT y `mysql2`.
+- **Base de Datos:** MariaDB.
+- **Servidor / Entorno de Pruebas:** Debian Linux Server + SSH / VS Code Port Forwarding.
+
+---
+
+## Alcance Funcional (Sprint 1)
+
+- **Acceso institucional y seguridad:** Validación estricta de dominio `@pcpuma.acatlan.unam.mx`, acceso directo para Administrador, verificación en dos pasos mediante código OTP de 6 dígitos (vigencia de 10 minutos) para Jefaturas y bloqueo automático tras 3 intentos fallidos.
+- **Gestión de cuentas y roles:** Control de cuentas `ADMINISTRADOR` y `JEFATURA` (`TITULAR` / `AUXILIAR`), con regla de negocio de máximo **2 cuentas activas por licenciatura** y activación/desactivación sin pérdida de historial.
+- **Catálogos dinámicos y ciclos de acreditación:** Administración de licenciaturas, organismos acreditadores (CIEES, CONAIC, CACEI, etc.), fechas de acreditación, categorías, indicadores, áreas responsables y porcentajes de avance.
+- **Captura y consulta del Plan de Mejora Continua:** Registro transaccional de múltiples recomendaciones por indicador (recomendación, acciones, meta, área responsable y fecha compromiso) con aislamiento de datos por licenciatura para Jefaturas y vista global/filtrada para Planeación.
 
 ---
 
 ## Estructura General del Repositorio
 
-El proyecto está dividido en tres carpetas principales para separar la base de datos, la lógica del servidor y la interfaz de usuario:
+El proyecto está organizado en tres módulos principales para separar la capa de datos, la API REST y la interfaz web:
 
 ```text
-sistema-mejora-continua/
-├── README.md                      # Documentación general del repositorio
+Proyecto_Ingenieria/
+├── README.md                                  # Documentación general del repositorio
+├── .gitignore                                 # Exclusión de dependencias, builds y archivos .env
+├── assets/                                    # Logotipos institucionales y corporativos
+│   ├── Logotipo_corporativo_Orvant_Technologies.png
+│   └── Logotipo_tecnológico_azul_ORVANT.png
 ├── base-de-datos/
-│   ├── README.md                  # Guía de creación, migración y respaldo en MariaDB
-│   └── esquema_produccion.sql     # Script SQL completo para despliegue limpio o actualización
+│   ├── esquema_sprint1.sql                    # DDL de tablas relacionales, llaves foráneas e índices
+│   └── semilla_sprint1.sql                    # Datos iniciales: usuarios, licenciaturas, ciclos y catálogos
 ├── backend/
-│   ├── README.md                  # Instrucciones de configuración de API, SMTP y variables de entorno
-│   ├── .env.example               # Plantilla de variables de entorno para el servidor
+│   ├── .env.example                           # Plantilla de variables de entorno (BD, puerto y JWT)
 │   ├── package.json
 │   └── src/
-│       ├── main.ts                # Punto de entrada del servidor NestJS y configuración de puertos
-│       ├── app.module.ts          # Conexión principal con MariaDB y registro de módulos
-│       ├── autenticacion/         # Validación de dominio @pcpuma, generación de OTP (6 dígitos) y JWT
-│       ├── usuarios/              # Gestión de cuentas, roles, límite de 2 usuarios por carrera y bloqueos
-│       ├── licenciaturas/         # Catálogo dinámico de programas académicos (ampliable sin tocar código)
-│       ├── planeacion/            # Planes de mejora, informes, validación PDF y bitácora de ajuste de fechas
-│       └── tickets/               # Gestión de solicitudes de prórroga y dudas del procedimiento
+│       ├── index.ts                           # Servidor Express, CORS, endpoint /api/health y montaje de rutas
+│       ├── config/
+│       │   ├── db.ts                          # Pool de conexiones hacia MariaDB
+│       │   └── mailer.ts                      # Envío de códigos OTP por correo SMTP (con respaldo en consola)
+│       ├── middlewares/
+│       │   └── auth.ts                        # Verificación de tokens JWT y control de acceso por rol
+│       └── routes/
+│           ├── auth.routes.ts                 # Solicitud de acceso, generación y validación de OTP
+│           ├── admin.routes.ts                # CRUD de usuarios, licenciaturas, ciclos y catálogos
+│           └── planes.routes.ts               # Consulta filtrada y captura transaccional de recomendaciones
 └── frontend/
-    ├── README.md                  # Guía de ejecución en VS Code y compilación para producción
-    ├── .env.example               # Plantilla de conexión hacia la API del backend
+    ├── next.config.ts                         # Proxy reverso (/api/* -> [http://127.0.0.1:3001/api/](http://127.0.0.1:3001/api/)*)
     ├── package.json
     └── src/
         ├── app/
-        │   ├── layout.tsx         # Configuración global de estilos y tipografía institucional
-        │   ├── page.tsx           # Redirección inicial al acceso del sistema
+        │   ├── globals.css                    # Estilos globales y configuración de Tailwind CSS
+        │   ├── layout.tsx                     # Estructura raíz y tipografía de la aplicación
+        │   ├── page.tsx                       # Redirección inicial hacia el inicio de sesión
         │   ├── login/
-        │   │   └── page.tsx       # Acceso institucional en 2 pasos (correo @pcpuma + código OTP)
+        │   │   └── page.tsx                   # Acceso institucional (correo @pcpuma y verificación OTP)
         │   └── tablero/
-        │       ├── layout.tsx     # Navegación lateral, barra superior y control de sesión por rol
-        │       ├── page.tsx       # Resumen de avances, estatus de documentos y alertas activas
+        │       ├── layout.tsx                 # Barra lateral, encabezado institucional y control de sesión
+        │       ├── page.tsx                   # Panel resumen con indicadores clave del Sprint 1
         │       ├── planes/
-        │       │   └── page.tsx   # Captura, carga de evidencias PDF, visor interno y ajuste de plazos
-        │       ├── tickets/
-        │       │   └── page.tsx   # Apertura y seguimiento de tickets de proceso (prórrogas y dudas)
+        │       │   └── page.tsx               # Formulario de captura múltiple y consulta de recomendaciones
         │       └── administracion/
-        │           └── page.tsx   # Alta de nuevas licenciaturas, gestión de usuarios y desbloqueos
-        ├── componentes/
-        │   ├── VisorPdfModal.tsx    # Previsualización de archivos PDF dentro de la misma plataforma
-        │   └── ModalAjusteFecha.tsx # Formulario para alargar o acortar fechas límite con historial
-        ├── datos/
-        │   └── datosIniciales.ts    # Catálogo inicial de licenciaturas y datos base para pruebas locales
+        │           └── page.tsx               # Gestión de usuarios, ciclos de acreditación y catálogos
         ├── servicios/
-        │   └── apiSistema.ts        # Cliente HTTP con respaldo local para pruebas sin servidor activo
+        │   └── apiSistema.ts                  # Cliente HTTP centralizado con manejo de sesión JWT
         └── tipos/
-            └── sistema.ts           # Definición de interfaces y tipos de datos del proyecto
+            └── sistema.ts                     # Interfaces y contratos de datos TypeScript
+```
+
+---
+
+## Guía Rápida de Ejecución Local
+
+1. **Base de datos (MariaDB):**
+   ```bash
+   sudo mariadb < base-de-datos/esquema_sprint1.sql
+   sudo mariadb < base-de-datos/semilla_sprint1.sql
+   ```
+2. **Backend (Puerto 3001):**
+   ```bash
+   cd backend
+   cp .env.example .env   # Configurar credenciales de MariaDB
+   npm install
+   npm run dev
+   ```
+3. **Frontend (Puerto 3000):**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
