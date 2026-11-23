@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
+        // TLS terminates at the reverse proxy; this is a loopback-only upstream.
         destination: "http://127.0.0.1:3001/api/:path*",
       },
     ];

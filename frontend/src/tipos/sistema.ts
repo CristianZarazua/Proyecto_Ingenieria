@@ -1,5 +1,63 @@
-export type RolUsuario = 'ADMINISTRADOR' | 'JEFATURA';
+export type RolUsuario = 'ADMINISTRADOR' | 'PLANEADOR' | 'JEFATURA';
 export type TipoCuenta = 'ADMIN' | 'TITULAR' | 'AUXILIAR';
+export type EstadoPlan = 'BORRADOR' | 'ENVIADO' | 'DEVUELTO' | 'VALIDADO';
+export type EstadoSeguimiento = 'BORRADOR' | 'ENVIADO' | 'DEVUELTO' | 'VALIDADO';
+export type TipoEvidencia = 'PDF' | 'ENLACE';
+
+export interface ItemPlan {
+  recomendacion: string;
+  acciones: string;
+  meta: string;
+  areaResponsableId: number;
+  fechaCumplimiento: string;
+}
+
+export interface DatosBorradorPlan {
+  licenciaturaId: number | null;
+  cicloId: number;
+  categoriaId: number;
+  indicadorId: number;
+  recomendaciones: ItemPlan[];
+}
+
+export interface BorradorPlan {
+  id: number;
+  licenciaturaId: number | null;
+  datos: DatosBorradorPlan;
+  actualizadoEn: string;
+}
+
+export interface EvidenciaRecomendacion {
+  id: number;
+  tipo: TipoEvidencia;
+  titulo: string;
+  nombreArchivo: string | null;
+  urlExterna: string | null;
+  tamanoBytes: number | null;
+}
+
+export interface SeguimientoRecomendacion {
+  recomendacionId: number;
+  licenciaturaId: number;
+  licenciaturaNombre: string;
+  cicloId: number;
+  cicloEtiqueta: string;
+  categoriaNombre: string;
+  indicadorNombre: string;
+  recomendacion: string;
+  acciones: string;
+  meta: string;
+  areaResponsableNombre: string;
+  fechaCumplimiento: string;
+  seguimientoId: number | null;
+  porcentajeId: number | null;
+  porcentajeAvance: number | null;
+  etiquetaAvance: string | null;
+  observaciones: string | null;
+  estatus: EstadoSeguimiento;
+  observacionesPlaneacion: string | null;
+  evidencias: EvidenciaRecomendacion[];
+}
 
 export interface Licenciatura {
   id: number;
@@ -68,6 +126,7 @@ export interface CicloAcreditacion {
   organismoSiglas: string;
   organismoNombre: string;
   fechaAcreditacion: string;
+  fechaFinAcreditacion: string;
   activo: boolean;
 }
 
@@ -88,4 +147,6 @@ export interface RecomendacionPlan {
   meta: string;
   fechaCumplimiento: string;
   fechaRegistro: string;
+  estatus: EstadoPlan;
+  observacionesPlaneacion: string | null;
 }

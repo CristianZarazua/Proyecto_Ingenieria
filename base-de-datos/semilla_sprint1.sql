@@ -9,6 +9,7 @@ INSERT INTO licenciaturas (id, nombre) VALUES
 
 INSERT INTO usuarios (nombre, email, rol, tipo_cuenta, licenciatura_id) VALUES
   ('Administrador Planeación', 'admin.planeacion@pcpuma.acatlan.unam.mx', 'ADMINISTRADOR', 'ADMIN', NULL),
+  ('Planeador de pruebas', 'planeador.planeacion@pcpuma.acatlan.unam.mx', 'PLANEADOR', 'ADMIN', NULL),
   ('Jefatura MAC', 'jefatura.mac@pcpuma.acatlan.unam.mx', 'JEFATURA', 'TITULAR', 1),
   ('Auxiliar MAC', 'auxiliar.mac@pcpuma.acatlan.unam.mx', 'JEFATURA', 'AUXILIAR', 1),
   ('Jefatura Derecho', 'jefatura.derecho@pcpuma.acatlan.unam.mx', 'JEFATURA', 'TITULAR', 4);
@@ -42,9 +43,9 @@ INSERT INTO cat_organismos (id, siglas, nombre) VALUES
   (3, 'CACEI', 'Consejo de Acreditación de la Enseñanza de la Ingeniería'),
   (4, 'CONFEDE', 'Consejo Nacional para la Acreditación de la Educación Superior en Derecho');
 
-INSERT INTO ciclos_acreditacion (id, licenciatura_id, organismo_id, fecha_acreditacion) VALUES
-  (1, 1, 1, '2026-05-15'),
-  (2, 4, 4, '2026-06-20');
+INSERT INTO ciclos_acreditacion (id, licenciatura_id, organismo_id, fecha_acreditacion, fecha_fin_acreditacion) VALUES
+  (1, 1, 1, '2026-05-15', '2031-05-15'),
+  (2, 4, 4, '2026-06-20', '2031-06-20');
 
 INSERT INTO recomendaciones_plan
   (ciclo_id, licenciatura_id, categoria_id, indicador_id, area_responsable_id, porcentaje_id, recomendacion, acciones, meta, fecha_cumplimiento, creado_por)

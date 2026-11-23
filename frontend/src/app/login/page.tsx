@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { apiSistema } from '@/servicios/apiSistema';
 
 export default function LoginPage() {
@@ -57,9 +58,17 @@ export default function LoginPage() {
     <div className="fondo-unam-animado flex min-h-screen flex-col justify-center px-4 py-12">
       <div className="mx-auto w-full max-w-md rounded-xl border border-amber-400/30 bg-white/95 p-8 shadow-2xl backdrop-blur-sm">
         <div className="mb-6 border-b border-slate-200 pb-4 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#B5892E]">
-            UNAM • FES Acatlán
-          </p>
+          <div className="mx-auto mb-3 flex items-center justify-center">
+            <Image
+              src="/logos/fes-blanco.png"
+              alt="Logotipo de FES Acatlán"
+              width={1000}
+              height={1102}
+              className="h-40 w-auto object-contain"
+              style={{ filter: 'brightness(0) saturate(100%)' }}
+              priority
+            />
+          </div>
           <h1 className="mt-1 text-xl font-bold text-[#0B2545]">
             Seguimiento a la Mejora Continua
           </h1>
@@ -149,31 +158,40 @@ export default function LoginPage() {
         )}
 
         <div className="mt-6 border-t border-slate-200 pt-4">
-          <p className="mb-2 text-[11px] font-semibold uppercase text-slate-400">
-            Cuentas precargadas para pruebas rápidas:
+          <p className="text-center text-xs text-slate-600">
+            ¿Necesitas una cuenta? Solicita al Administrador que registre tu correo institucional. No hay autorregistro público.
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => setEmail('admin.planeacion@pcpuma.acatlan.unam.mx')}
-              className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-200"
-            >
-              Administrador
-            </button>
-            <button
-              type="button"
-              className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-200"
-            >
-            </button>
-            <button
-              type="button"
-              onClick={() => setEmail('jefatura.mac@pcpuma.acatlan.unam.mx')}
-              className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-200"
-            >
-              Jefatura MAC
-            </button>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase text-slate-400">
+                Cuentas de prueba (requieren estar cargadas en la base de datos):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setEmail('admin.planeacion@pcpuma.acatlan.unam.mx')}
+                  className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-200"
+                >
+                  Administrador
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmail('planeador.planeacion@pcpuma.acatlan.unam.mx')}
+                  className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-200"
+                >
+                  Planeador
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmail('jefatura.mac@pcpuma.acatlan.unam.mx')}
+                  className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-200"
+                >
+                  Jefatura MAC
+                </button>
+              </div>
+            </div>
+          )}
           </div>
-        </div>
       </div>
     </div>
   );
