@@ -8,7 +8,7 @@ Interfaz web desarrollada con Next.js (App Router), TypeScript y Tailwind CSS.
 - `tablero/informe`: avance por recomendación, observaciones, evidencias PDF o ligas, revisión y descarga del reporte Word/PDF.
 - `tablero/administracion`: el Administrador crea cuentas de Jefatura y Planeador individualmente o por lotes de hasta 100 correos, y gestiona licenciaturas, catálogos y ciclos; Planeador gestiona catálogos y ciclos sin acceso a cuentas.
 - Planeador consulta todas las licenciaturas y puede validar o devolver Planes e Informes. Jefatura captura y consulta únicamente su licenciatura.
-- Todas las cuentas requieren un OTP enviado por SMTP; en desarrollo local sin SMTP se muestra un código simulado. No hay autorregistro público: las cuentas solo las da de alta el Administrador.
+- En producción todas las cuentas requieren OTP enviado por SMTP. En desarrollo, Administrador entra sin OTP para pruebas y las demás cuentas usan un código simulado si SMTP no está configurado. No hay autorregistro público: las cuentas solo las da de alta el Administrador.
 - Las cuentas rápidas de prueba aparecen solo en modo de desarrollo. El correo de Planeador requiere existir en la base de datos de pruebas.
 
 La interfaz presenta los nombres completos de las funciones; los identificadores de planificación se mantienen únicamente en la documentación general.

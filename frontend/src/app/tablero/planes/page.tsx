@@ -62,44 +62,48 @@ export default function PlanesPage() {
   };
 
   useEffect(() => {
-    const sesion = apiSistema.obtenerSesion();
-    if (!sesion) return;
-    setUsuario(sesion);
+    Promise.resolve().then(() => {
+      const sesion = apiSistema.obtenerSesion();
+      if (!sesion) return;
+      setUsuario(sesion);
 
-    const paramLic = new URLSearchParams(window.location.search).get('licenciaturaId');
-    const licUrl = paramLic ? Number(paramLic) : null;
+      const paramLic = new URLSearchParams(window.location.search).get('licenciaturaId');
+      const licUrl = paramLic ? Number(paramLic) : null;
 
-    Promise.all([
-      apiSistema.obtenerLicenciaturas(),
-      apiSistema.obtenerCiclos(),
-      apiSistema.obtenerCatalogos(),
-    ]).then(([lics, cics, cats]) => {
-      setLicenciaturas(lics);
-      setCiclos(cics);
-      setCatalogos(cats);
+      Promise.all([
+        apiSistema.obtenerLicenciaturas(),
+        apiSistema.obtenerCiclos(),
+        apiSistema.obtenerCatalogos(),
+      ]).then(([lics, cics, cats]) => {
+        setLicenciaturas(lics);
+        setCiclos(cics);
+        setCatalogos(cats);
 
-      const catIni = cats.categorias[0]?.id || 0;
-      const indIni = cats.indicadores.find((i) => i.categoriaId === catIni)?.id || 0;
-      const areaIni = cats.areas[0]?.id || 0;
-      const licenciaturaInicial = sesion.rol === 'JEFATURA' ? sesion.licenciaturaId : licUrl;
-      const cicloInicial = licenciaturaInicial
-        ? cics.find((ciclo) => ciclo.licenciaturaId === licenciaturaInicial)?.id || 0
-        : 0;
-      setCategoriaId(catIni);
-      setIndicadorId(indIni);
-      setCicloId(cicloInicial);
-      setItems([{ recomendacion: '', acciones: '', meta: '', areaResponsableId: areaIni, fechaCumplimiento: '' }]);
+        const catIni = cats.categorias[0]?.id || 0;
+        const indIni = cats.indicadores.find((i) => i.categoriaId === catIni)?.id || 0;
+        const areaIni = cats.areas[0]?.id || 0;
+        const licenciaturaInicial = sesion.rol === 'JEFATURA' ? sesion.licenciaturaId : licUrl;
+        const cicloInicial = licenciaturaInicial
+          ? cics.find((ciclo) => ciclo.licenciaturaId === licenciaturaInicial)?.id || 0
+          : 0;
+        setCategoriaId(catIni);
+        setIndicadorId(indIni);
+        setCicloId(cicloInicial);
+        setItems([{ recomendacion: '', acciones: '', meta: '', areaResponsableId: areaIni, fechaCumplimiento: '' }]);
 
-      if (sesion.rol === 'JEFATURA') {
-        const destino = licUrl || sesion.licenciaturaId;
-        setLicFiltro(sesion.licenciaturaId || 0);
-        cargarPlanes(destino);
-      } else {
-        setLicFiltro(licUrl || 0);
-        cargarPlanes(licUrl);
-      }
+        if (sesion.rol === 'JEFATURA') {
+          const destino = licUrl || sesion.licenciaturaId;
+          setLicFiltro(sesion.licenciaturaId || 0);
+          cargarPlanes(destino);
+        } else {
+          setLicFiltro(licUrl || 0);
+          cargarPlanes(licUrl);
+        }
+      }).catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'No se pudieron cargar los datos del Plan.');
+      });
+      if (sesion.rol !== 'PLANEADOR') cargarBorradores();
     });
-    if (sesion.rol !== 'PLANEADOR') cargarBorradores();
   }, []);
 
   const agregarFilaRecomendacion = () => {
@@ -242,11 +246,12 @@ export default function PlanesPage() {
   const planesDelCiclo = planes.filter((plan) => plan.cicloId === cicloId);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Plan de Mejora Continua</h1>
-          <p className="text-sm text-slate-600">
+    <div className="mx-auto w-full max-w-[1700px] space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="min-w-0 border-l-4 border-[#D4AF37] pl-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#765A10]">Captura y seguimiento</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Plan de Mejora Continua</h1>
+          <p className="mt-1 max-w-2xl text-sm text-slate-600">
             Captura y consulta de recomendaciones, acciones, metas y fechas de cumplimiento.
           </p>
         </div>
@@ -291,7 +296,7 @@ export default function PlanesPage() {
       {mensaje && <div className="rounded border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">{mensaje}</div>}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-xl border border-slate-200 border-t-4 border-t-[#134074] bg-white p-5 shadow-sm">
           <h2 className="font-bold text-slate-800">Reporte del Plan de Mejora Continua</h2>
           <p className="mt-1 text-xs text-slate-600">Descarga el ciclo seleccionado en formato editable o PDF.</p>
           <label className="mt-3 block max-w-xl text-xs font-semibold text-slate-700">
@@ -315,7 +320,7 @@ export default function PlanesPage() {
           </div>
         </section>
 
-        {usuario.rol !== 'PLANEADOR' && <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        {usuario.rol !== 'PLANEADOR' && <section className="rounded-xl border border-slate-200 border-t-4 border-t-[#D4AF37] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <div>
               <h2 className="font-bold text-slate-800">Mis borradores</h2>
@@ -341,7 +346,7 @@ export default function PlanesPage() {
         </section>}
       </div>
 
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Vista previa del Plan">
         <div className="border-b border-slate-100 p-4">
           <h2 className="font-bold text-slate-800">Vista previa del Plan de Mejora Continua</h2>
           <p className="mt-1 text-xs text-slate-600">Contenido del ciclo seleccionado, con las columnas del formato institucional.</p>
@@ -372,8 +377,8 @@ export default function PlanesPage() {
       </section>
 
       {mostrarForm && (
-        <form onSubmit={guardarPlan} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm">
-          <h2 className="text-base font-bold text-slate-800">{borradorId ? 'Editar borrador del Plan' : 'Nueva captura del Plan'}</h2>
+        <form onSubmit={guardarPlan} className="space-y-4 rounded-xl border border-slate-200 border-t-4 border-t-[#D4AF37] bg-white p-5 text-sm shadow-sm sm:p-6">
+          <h2 className="text-lg font-bold text-[#0B2545]">{borradorId ? 'Editar borrador del Plan' : 'Nueva captura del Plan'}</h2>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
@@ -428,7 +433,7 @@ export default function PlanesPage() {
 
           <div className="space-y-4">
             {items.map((item, idx) => (
-              <div key={idx} className="space-y-3 rounded border border-slate-200 bg-slate-50 p-4">
+              <div key={idx} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase text-[#0B2545]">Recomendación #{idx + 1}</span>
                   {items.length > 1 && (

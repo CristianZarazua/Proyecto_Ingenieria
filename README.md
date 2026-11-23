@@ -66,7 +66,7 @@ Plataforma web desarrollada para la **Unidad de Planeación** y las **Jefaturas 
 
 ## Funcionalidades disponibles
 
-- **Acceso institucional y seguridad:** Validación estricta de dominio `@pcpuma.acatlan.unam.mx`, OTP de 6 dígitos por correo para todos los roles, vigencia de 10 minutos y bloqueo automático tras 3 intentos fallidos. En desarrollo sin SMTP se muestra un código simulado; producción requiere SMTP.
+- **Acceso institucional y seguridad:** Validación estricta de dominio `@pcpuma.acatlan.unam.mx`, OTP de 6 dígitos por correo en producción para todos los roles, vigencia de 10 minutos y bloqueo automático tras 3 intentos fallidos. En desarrollo, Administrador entra sin OTP para facilitar las pruebas y las demás cuentas reciben un código simulado si no hay SMTP configurado.
 - **Gestión de cuentas y roles:** El Administrador da de alta cuentas de `JEFATURA` (`TITULAR` / `AUXILIAR`) y `PLANEADOR`, individualmente o por lotes de hasta 100 correos. No hay autorregistro público ni creación de nuevos Administradores desde esta función. Se conserva el máximo de **2 cuentas activas por licenciatura** y la activación/desactivación sin pérdida de historial. Planeador consulta y revisa globalmente y administra ciclos/catálogos, pero no cuentas.
 - **Catálogos y acreditaciones:** Administración de licenciaturas, organismos, categorías, indicadores, áreas responsables y porcentajes; cada ciclo incluye fecha inicial y final de acreditación.
 - **Plan de Mejora Continua:** Captura de recomendaciones y acciones, guardado de borradores privados por creador, envío, devolución con observaciones por recomendación y validación administrativa o de Planeador.

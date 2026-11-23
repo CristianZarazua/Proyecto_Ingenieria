@@ -7,6 +7,9 @@ import { apiSistema } from '@/servicios/apiSistema';
 
 export default function LoginPage() {
   const router = useRouter();
+  const correoContactoAlta = 'admin.planeacion@pcpuma.acatlan.unam.mx';
+  const asuntoAlta = encodeURIComponent('Solicitud de alta en Seguimiento a la Mejora Continua');
+  const cuerpoAlta = encodeURIComponent('Nombre completo:\nLicenciatura:\nTipo de cuenta (titular o auxiliar):\n');
   const [email, setEmail] = useState('');
   const [codigoOtp, setCodigoOtp] = useState('');
   const [esperandoOtp, setEsperandoOtp] = useState(false);
@@ -158,9 +161,30 @@ export default function LoginPage() {
         )}
 
         <div className="mt-6 border-t border-slate-200 pt-4">
-          <p className="text-center text-xs text-slate-600">
-            ¿Necesitas una cuenta? Solicita al Administrador que registre tu correo institucional. No hay autorregistro público.
-          </p>
+          <section className="rounded-lg border border-blue-200 border-l-4 border-l-[#D4AF37] bg-slate-50 p-4" aria-labelledby="solicitud-alta">
+            <h2 id="solicitud-alta" className="text-sm font-bold text-[#0B2545]">
+              ¿Aún no tienes cuenta?
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Solicita tu alta desde tu correo institucional. Incluye tu nombre, licenciatura y si eres titular o auxiliar. El Administrador registrará la cuenta; no hay autorregistro público.
+            </p>
+            <a
+              href={`mailto:${correoContactoAlta}?subject=${asuntoAlta}&body=${cuerpoAlta}`}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#0B2545] px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-[#134074] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="h-4 w-4">
+                <path d="M3 5.5h14v9H3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="m3.5 6 6.5 5 6.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+              Enviar solicitud de alta
+            </a>
+            <p className="mt-2 text-center text-[11px] text-slate-500">
+              Correo de ejemplo: <span className="font-semibold text-[#134074]">{correoContactoAlta}</span>
+            </p>
+            <p className="mt-1 text-center text-[11px] text-slate-500">
+              Cuando te confirmen el alta, mantente atento a tu correo y revisa también la carpeta de spam.
+            </p>
+          </section>
           {process.env.NODE_ENV === 'development' && (
             <div className="mt-4">
               <p className="mb-2 text-[11px] font-semibold uppercase text-slate-400">

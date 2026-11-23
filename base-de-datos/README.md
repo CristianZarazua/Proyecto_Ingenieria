@@ -27,7 +27,7 @@ Para habilitar la cuenta de Planeador de pruebas en una base local existente:
 sudo mariadb < base-de-datos/provisionar_cuenta_prueba_planeador.sql
 ```
 
-No ejecutes este último script en producción. La cuenta de prueba inicia sesión con OTP igual que las demás y solo puede recibir el código simulado en desarrollo sin SMTP.
+No ejecutes este último script en producción. En desarrollo, la cuenta de Administrador entra sin OTP para pruebas; Planeador y Jefatura usan OTP simulado si SMTP no está configurado. En producción, todos los roles requieren OTP por SMTP.
 
 ## Entidades principales
 
@@ -40,8 +40,9 @@ No ejecutes este último script en producción. La cuenta de prueba inicia sesi�
 - `cat_*`: catálogos administrables de categorías, indicadores, áreas, porcentajes y organismos.
 
 El Administrador registra cuentas de Jefatura y Planeador individualmente o por
-lotes de hasta 100 correos institucionales. No hay autorregistro público. Todas
-las cuentas, incluido Administrador, requieren OTP. Planeador puede consultar
+lotes de hasta 100 correos institucionales. No hay autorregistro público. En
+producción, todas las cuentas requieren OTP; en desarrollo, el Administrador
+puede entrar sin OTP para pruebas. Planeador puede consultar
 todas las licenciaturas, validar o devolver Planes e Informes y administrar
 ciclos y catálogos. Jefatura captura únicamente para su licenciatura.
 
