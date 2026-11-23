@@ -6,12 +6,39 @@ const router = Router();
 router.use(verificarToken);
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
-    const u = req.usuario!; const reqLic = req.query.licenciaturaId ? Number(req.query.licenciaturaId) : null;
-    if (u.rol === 'JEFATURA' && reqLic && reqLic !== u.licenciaturaId) { res.status(403).json({ mensaje: 'Acceso denegado a otra licenciatura.' }); return; }
-    const f = u.rol === 'JEFATURA' ? u.licenciaturaId : reqLic;
-    const [rows] = await pool.query<RowDataPacket[]>(`SELECT rp.id,rp.ciclo_id AS cicloId,CONCAT(o.siglas,' (',DATE_FORMAT(c.fecha_acreditacion,'%Y-%m-%d'),')') AS cicloEtiqueta,rp.licenciatura_id AS licenciaturaId,l.nombre AS licenciaturaNombre,rp.categoria_id AS categoriaId,cat.nombre AS categoriaNombre,rp.indicador_id AS indicadorId,ind.nombre AS indicadorNombre,rp.area_responsable_id AS areaResponsableId,ar.nombre AS areaResponsableNombre,rp.recomendacion,rp.acciones,rp.meta,DATE_FORMAT(rp.fecha_cumplimiento,'%Y-%m-%d') AS fechaCumplimiento,DATE_FORMAT(rp.creado_en,'%Y-%m-%d') AS fechaRegistro FROM recomendaciones_plan rp JOIN ciclos_acreditacion c ON rp.ciclo_id=c.id JOIN cat_organismos o ON c.organismo_id=o.id JOIN licenciaturas l ON rp.licenciatura_id=l.id JOIN cat_categorias cat ON rp.categoria_id=cat.id JOIN cat_indicadores ind ON rp.indicador_id=ind.id JOIN cat_areas_responsables ar ON rp.area_responsable_id=ar.id ${f ? 'WHERE rp.licenciatura_id=?' : ''} ORDER BY rp.id DESC`, f ? [f] : []);
+    const u = req.usuario!;
+    const reqLic = req.query.licenciaturaId ? Number(req.query.licenciaturaId) : null;
+    const reqCiclo = req.query.cicloId ? Number(req.query.cicloId) : null;
+
+    if (u.rol === 'JEFATURA' && reqLic && reqLic !== u.licenciaturaId) {
+      res.status(403).json({ mensaje: 'Acceso denegado a otra licenciatura.' });
+      return;
+    }
+
+    const fLic = u.rol === 'JEFATURA' ? u.licenciaturaId : reqLic;
+    const condiciones: string[] = [];
+    const params: number[] = [];
+
+    if (fLic) {
+      condiciones.push('rp.licenciatura_id = ?');
+      params.push(fLic);
+    }
+    if (reqCiclo) {
+      condiciones.push('rp.ciclo_id = ?');
+      params.push(reqCiclo);
+    }
+
+    const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
+
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT rp.id,rp.ciclo_id AS cicloId,CONCAT(o.siglas,' (',DATE_FORMAT(c.fecha_acreditacion,'%Y-%m-%d'),')') AS cicloEtiqueta,rp.licenciatura_id AS licenciaturaId,l.nombre AS licenciaturaNombre,rp.categoria_id AS categoriaId,cat.nombre AS categoriaNombre,rp.indicador_id AS indicadorId,ind.nombre AS indicadorNombre,rp.area_responsable_id AS areaResponsableId,ar.nombre AS areaResponsableNombre,rp.recomendacion,rp.acciones,rp.meta,DATE_FORMAT(rp.fecha_cumplimiento,'%Y-%m-%d') AS fechaCumplimiento,DATE_FORMAT(rp.creado_en,'%Y-%m-%d') AS fechaRegistro FROM recomendaciones_plan rp JOIN ciclos_acreditacion c ON rp.ciclo_id=c.id JOIN cat_organismos o ON c.organismo_id=o.id JOIN licenciaturas l ON rp.licenciatura_id=l.id JOIN cat_categorias cat ON rp.categoria_id=cat.id JOIN cat_indicadores ind ON rp.indicador_id=ind.id JOIN cat_areas_responsables ar ON rp.area_responsable_id=ar.id ${whereClause} ORDER BY rp.id DESC`,
+      params
+    );
     res.json(rows);
-  } catch (e) { console.error(e); res.status(500).json({ mensaje: 'Error al consultar planes.' }); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ mensaje: 'Error al consultar planes.' });
+  }
 });
 router.post('/', requerirRoles('JEFATURA', 'ADMINISTRADOR'), async (req: AuthRequest, res: Response) => {
   const conn = await pool.getConnection();

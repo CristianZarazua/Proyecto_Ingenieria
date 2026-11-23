@@ -113,8 +113,11 @@ export const apiSistema = {
     return peticion(`/catalogos/${tipo}/${id}`, { method: 'PUT', body: JSON.stringify(datos) });
   },
 
-  obtenerPlanes(licenciaturaId?: number | null): Promise<RecomendacionPlan[]> {
-    const query = licenciaturaId ? `?licenciaturaId=${licenciaturaId}` : '';
+ obtenerPlanes(licenciaturaId?: number | null, cicloId?: number | null): Promise<RecomendacionPlan[]> {
+    const params = new URLSearchParams();
+    if (licenciaturaId) params.set('licenciaturaId', String(licenciaturaId));
+    if (cicloId) params.set('cicloId', String(cicloId));
+    const query = params.toString() ? `?${params.toString()}` : '';
     return peticion<RecomendacionPlan[]>(`/planes${query}`);
   },
 

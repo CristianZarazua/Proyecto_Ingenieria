@@ -26,6 +26,7 @@ export default function PlanesPage() {
   const [planes, setPlanes] = useState<RecomendacionPlan[]>([]);
 
   const [licFiltro, setLicFiltro] = useState<number>(0);
+  const [cicloFiltro, setCicloFiltro] = useState<number>(0);
   const [accesoDenegado, setAccesoDenegado] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
@@ -38,10 +39,10 @@ export default function PlanesPage() {
     { recomendacion: '', acciones: '', meta: '', areaResponsableId: 0, fechaCumplimiento: '' },
   ]);
 
-  const cargarPlanes = async (licId?: number | null) => {
+  const cargarPlanes = async (licId?: number | null, cicId?: number | null) => {
     try {
       setAccesoDenegado('');
-      const lista = await apiSistema.obtenerPlanes(licId || null);
+      const lista = await apiSistema.obtenerPlanes(licId || null, cicId || null);
       setPlanes(lista);
     } catch (err: unknown) {
       setAccesoDenegado(err instanceof Error ? err.message : 'Acceso denegado a esta licenciatura.');
@@ -71,16 +72,26 @@ export default function PlanesPage() {
       const areaIni = cats.areas[0]?.id || 0;
       setCategoriaId(catIni);
       setIndicadorId(indIni);
-      setCicloId(cics[0]?.id || 0);
       setItems([{ recomendacion: '', acciones: '', meta: '', areaResponsableId: areaIni, fechaCumplimiento: '' }]);
 
       if (sesion.rol === 'JEFATURA') {
         const destino = licUrl || sesion.licenciaturaId;
+        const ciclosLic = cics.filter((c) => c.licenciaturaId === sesion.licenciaturaId);
+        const cicloActivo = ciclosLic.find((c) => c.activo)?.id || ciclosLic[0]?.id || 0;
+
         setLicFiltro(sesion.licenciaturaId || 0);
-        cargarPlanes(destino);
+        setCicloFiltro(cicloActivo);
+        setCicloId(cicloActivo);
+        cargarPlanes(destino, cicloActivo || null);
       } else {
-        setLicFiltro(licUrl || 0);
-        cargarPlanes(licUrl);
+        const licInicial = licUrl || 0;
+        const ciclosLic = licInicial ? cics.filter((c) => c.licenciaturaId === licInicial) : cics;
+        const cicloInicial = licInicial ? (ciclosLic.find((c) => c.activo)?.id || ciclosLic[0]?.id || 0) : 0;
+
+        setLicFiltro(licInicial);
+        setCicloFiltro(cicloInicial);
+        setCicloId(cicloInicial);
+        cargarPlanes(licInicial || null, cicloInicial || null);
       }
     });
   }, []);
@@ -123,7 +134,8 @@ export default function PlanesPage() {
       setMostrarForm(false);
       const areaIni = catalogos?.areas[0]?.id || 0;
       setItems([{ recomendacion: '', acciones: '', meta: '', areaResponsableId: areaIni, fechaCumplimiento: '' }]);
-      cargarPlanes(usuario.rol === 'JEFATURA' ? usuario.licenciaturaId : licFiltro || null);
+      setCicloFiltro(cicloId);
+      cargarPlanes(usuario.rol === 'JEFATURA' ? usuario.licenciaturaId : licFiltro || null, cicloId);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar el Plan.');
     }
@@ -153,7 +165,11 @@ export default function PlanesPage() {
               onChange={(e) => {
                 const id = Number(e.target.value);
                 setLicFiltro(id);
-                cargarPlanes(id || null);
+                const ciclosDeLic = id ? ciclos.filter((c) => c.licenciaturaId === id) : ciclos;
+                const nuevoCiclo = id ? (ciclosDeLic.find((c) => c.activo)?.id || ciclosDeLic[0]?.id || 0) : 0;
+                setCicloFiltro(nuevoCiclo);
+                setCicloId(nuevoCiclo);
+                cargarPlanes(id || null, nuevoCiclo || null);
               }}
               className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
             >
@@ -164,16 +180,52 @@ export default function PlanesPage() {
             </select>
           )}
 
+          <select
+            value={cicloFiltro}
+            onChange={(e) => {
+              const cId = Number(e.target.value);
+              setCicloFiltro(cId);
+              if (cId) setCicloId(cId);
+              cargarPlanes(usuario.rol === 'JEFATURA' ? usuario.licenciaturaId : licFiltro || null, cId || null);
+            }}
+            className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+          >
+            {ciclosFiltrados.length === 0 ? (
+              <option value={0}>Sin ciclos registrados</option>
+            ) : (
+              <>
+                {usuario.rol === 'ADMINISTRADOR' && licFiltro === 0 && (
+                  <option value={0}>Todos los ciclos</option>
+                )}
+                {ciclosFiltrados.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    Ciclo: {c.organismoSiglas} ({c.fechaAcreditacion}) {c.activo ? '• Vigente' : '• Histórico'}
+                  </option>
+                ))}
+              </>
+            )}
+          </select>
+
           {usuario.rol === 'JEFATURA' && !accesoDenegado && (
             <button
-              onClick={() => setMostrarForm(!mostrarForm)}
-              className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white hover:bg-[#134074]"
+              onClick={() => {
+                if (!mostrarForm && cicloFiltro) setCicloId(cicloFiltro);
+                setMostrarForm(!mostrarForm);
+              }}
+              disabled={ciclosFiltrados.length === 0}
+              className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white hover:bg-[#134074] disabled:opacity-50"
             >
               {mostrarForm ? 'Cerrar captura' : 'Capturar en el Plan'}
             </button>
           )}
         </div>
       </div>
+
+      {usuario.rol === 'JEFATURA' && ciclosFiltrados.length === 0 && !accesoDenegado && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-800">
+          Esta licenciatura aún no tiene un ciclo de acreditación registrado. Solicite a la Unidad de Planeación que registre el ciclo para poder capturar.
+        </div>
+      )}
 
       {accesoDenegado && (
         <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800">
@@ -337,7 +389,7 @@ export default function PlanesPage() {
         <div className="space-y-3">
           {planes.length === 0 ? (
             <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-              No hay recomendaciones registradas para esta selección.
+              No hay recomendaciones registradas para el ciclo seleccionado.
             </div>
           ) : (
             planes.map((p) => (
