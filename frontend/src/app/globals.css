@@ -2,7 +2,7 @@
 
 :root {
   color-scheme: light;
-  --background: #F8FAFC;
+  --background: #F1F5F9;
   --foreground: #0f172a;
 }
 
@@ -43,4 +43,175 @@ input::placeholder,
 textarea::placeholder {
   color: #64748b !important;
   opacity: 1;
+}
+
+.tablero-app {
+  font-size: 15px;
+}
+
+.tablero-app .text-xs {
+  font-size: 0.9375rem;
+  line-height: 1.45rem;
+}
+
+.tablero-app [class~="text-[11px]"] {
+  font-size: 0.875rem;
+  line-height: 1.3rem;
+}
+
+.tablero-app .text-sm {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.tablero-app.tema-oscuro {
+  color-scheme: dark;
+  color: #e2e8f0;
+  background-color: #0f172a;
+}
+
+.tablero-app.tema-oscuro .sidebar-unam-animada {
+  background: linear-gradient(160deg, #0b2545, #102d50);
+  animation: none;
+}
+
+.tablero-app.tema-oscuro header,
+.tablero-app.tema-oscuro [class~="bg-white"] {
+  background-color: #172337 !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-[#F1F5F9]"],
+.tablero-app.tema-oscuro [class~="bg-[#F8FAFC]"],
+.tablero-app.tema-oscuro [class~="bg-slate-50"] {
+  background-color: #0f172a !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-slate-100"],
+.tablero-app.tema-oscuro [class~="bg-slate-200"] {
+  background-color: #243247 !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-[#0B2545]"] {
+  background-color: #17436d !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-[#134074]"] {
+  background-color: #215783 !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-red-50"] {
+  background-color: #3a202a !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-blue-50"] {
+  background-color: #1b2e46 !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-emerald-50"] {
+  background-color: #18372f !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-amber-50"] {
+  background-color: #3a311e !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-emerald-100"] {
+  background-color: #1b4438 !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-blue-100"] {
+  background-color: #203b5a !important;
+}
+
+.tablero-app.tema-oscuro [class~="bg-rose-100"],
+.tablero-app.tema-oscuro [class~="bg-red-100"] {
+  background-color: #462632 !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-slate-900"],
+.tablero-app.tema-oscuro [class~="text-slate-800"] {
+  color: #f1f5f9 !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-slate-700"] {
+  color: #d7e0ec !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-slate-600"],
+.tablero-app.tema-oscuro [class~="text-slate-500"],
+.tablero-app.tema-oscuro [class~="text-slate-400"] {
+  color: #adbed2 !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-[#0B2545]"],
+.tablero-app.tema-oscuro [class~="text-[#134074]"] {
+  color: #bdd9f3 !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-[#765A10]"] {
+  color: #e6ca73 !important;
+}
+
+.tablero-app.tema-oscuro .fill-slate-900 {
+  fill: #f1f5f9;
+}
+
+.tablero-app.tema-oscuro .fill-slate-500 {
+  fill: #adbed2;
+}
+
+.tablero-app.tema-oscuro .donut-track {
+  stroke: #35465d;
+}
+
+.tablero-app.tema-oscuro [class~="text-red-700"],
+.tablero-app.tema-oscuro [class~="text-red-800"],
+.tablero-app.tema-oscuro [class~="text-rose-800"] {
+  color: #fda4af !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-blue-800"] {
+  color: #93c5fd !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-emerald-700"],
+.tablero-app.tema-oscuro [class~="text-emerald-800"] {
+  color: #86efac !important;
+}
+
+.tablero-app.tema-oscuro [class~="text-amber-700"],
+.tablero-app.tema-oscuro [class~="text-amber-950"] {
+  color: #fcd34d !important;
+}
+
+.tablero-app.tema-oscuro [class~="border-slate-100"],
+.tablero-app.tema-oscuro [class~="border-slate-200"],
+.tablero-app.tema-oscuro [class~="border-slate-300"] {
+  border-color: #35465d !important;
+}
+
+.tablero-app.tema-oscuro [class~="divide-slate-200"] > :not(:last-child) {
+  border-color: #35465d !important;
+}
+
+.tablero-app.tema-oscuro [class~="hover:bg-slate-100"]:hover,
+.tablero-app.tema-oscuro [class~="hover:bg-slate-200"]:hover {
+  background-color: #2a3a50 !important;
+}
+
+.tablero-app.tema-oscuro [class~="hover:bg-red-100"]:hover {
+  background-color: #522b36 !important;
+}
+
+.tablero-app.tema-oscuro input:not([type="checkbox"]):not([type="radio"]),
+.tablero-app.tema-oscuro textarea,
+.tablero-app.tema-oscuro select {
+  color: #e2e8f0 !important;
+  background-color: #111c2d !important;
+  border-color: #465970;
+}
+
+.tablero-app.tema-oscuro input::placeholder,
+.tablero-app.tema-oscuro textarea::placeholder {
+  color: #9fb0c4 !important;
 }

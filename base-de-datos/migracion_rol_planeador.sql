@@ -1,0 +1,4 @@
+USE mejora_continua_acatlan;
+
+ALTER TABLE usuarios
+  MODIFY COLUMN rol ENUM('ADMINISTRADOR', 'PLANEADOR', 'JEFATURA') NOT NULL;
