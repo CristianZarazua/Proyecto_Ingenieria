@@ -1,13 +1,195 @@
 import { Router, Response } from 'express';
+import { randomInt } from 'node:crypto';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { pool } from '../config/db.js';
-import { AuthRequest, verificarToken, requerirRoles } from '../middlewares/auth.js';
+import { AuthRequest, PayloadUsuario, firmarToken, verificarToken, requerirRoles } from '../middlewares/auth.js';
 import { normalizarCorreoInstitucional } from '../utils/correoInstitucional.js';
+import { enviarCorreo, enviarCorreoOtp } from '../config/mailer.js';
 const router = Router();
 router.use(verificarToken);
 
 type RolAlta = 'PLANEADOR' | 'JEFATURA';
 type TipoCuentaJefatura = 'TITULAR' | 'AUXILIAR';
+
+interface CambioCorreoRow extends RowDataPacket {
+  emailNuevo: string;
+  codigoOtp: string;
+  intentosFallidos: number;
+  vigente: number;
+}
+
+interface UsuarioAdminRow extends RowDataPacket {
+  id: number;
+  nombre: string;
+  email: string;
+  rol: PayloadUsuario['rol'];
+  tipoCuenta: PayloadUsuario['tipoCuenta'];
+  licenciaturaId: number | null;
+  licenciaturaNombre: string | null;
+  activo: number;
+  bloqueado: number;
+}
+
+router.post('/admin/correo/cambio', requerirRoles('ADMINISTRADOR'), async (req: AuthRequest, res: Response) => {
+  const email = normalizarCorreoInstitucional(req.body.email);
+  if (!email) {
+    res.status(400).json({ mensaje: 'Indique un correo válido @pcpuma.acatlan.unam.mx.' });
+    return;
+  }
+  if (email === req.usuario!.email.toLowerCase()) {
+    res.status(400).json({ mensaje: 'El correo indicado ya es el correo de esta cuenta.' });
+    return;
+  }
+
+  try {
+    const [existentes] = await pool.query<RowDataPacket[]>(
+      'SELECT id FROM usuarios WHERE LOWER(email)=? AND id<>?',
+      [email, req.usuario!.id]
+    );
+    if (existentes.length) {
+      res.status(409).json({ mensaje: 'Ese correo ya está asociado a otra cuenta.' });
+      return;
+    }
+
+    const codigo = randomInt(100000, 1000000).toString();
+    const [pendiente] = await pool.query<ResultSetHeader>(
+      `UPDATE cambios_correo_admin
+       SET email_nuevo=?,codigo_otp=?,expira_en=DATE_ADD(NOW(), INTERVAL 10 MINUTE),intentos_fallidos=0
+       WHERE usuario_id=?`,
+      [email, codigo, req.usuario!.id]
+    );
+    if (!pendiente.affectedRows) {
+      await pool.query(
+        `INSERT INTO cambios_correo_admin (usuario_id,email_nuevo,codigo_otp,expira_en,intentos_fallidos)
+         VALUES (?,?,?,DATE_ADD(NOW(), INTERVAL 10 MINUTE),0)`,
+        [req.usuario!.id, email, codigo]
+      );
+    }
+
+    const enviado = await enviarCorreoOtp(email, codigo);
+    res.json({
+      mensaje: enviado
+        ? 'Se envió un código al nuevo correo. Expira en 10 minutos.'
+        : 'SMTP no está configurado; use el código simulado solo para pruebas locales.',
+      ...(!enviado && process.env.NODE_ENV !== 'production' ? { codigoSimulado: codigo } : {}),
+    });
+  } catch (error) {
+    console.error('Error al solicitar el cambio de correo del Administrador:', error);
+    const detalle = error as { code?: string };
+    if (detalle.code === 'ER_DUP_ENTRY') {
+      res.status(409).json({ mensaje: 'Ese correo ya tiene un cambio pendiente en otra cuenta.' });
+      return;
+    }
+    res.status(502).json({ mensaje: 'No se pudo enviar el código al nuevo correo.' });
+  }
+});
+
+router.post('/admin/correo/cambio/verificar', requerirRoles('ADMINISTRADOR'), async (req: AuthRequest, res: Response) => {
+  const codigo = String(req.body.codigo || '').trim();
+  if (!/^\d{6}$/.test(codigo)) {
+    res.status(400).json({ mensaje: 'Indique el código de verificación de 6 dígitos.' });
+    return;
+  }
+
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+    const [cambios] = await conexion.query<CambioCorreoRow[]>(
+      `SELECT email_nuevo AS emailNuevo,codigo_otp AS codigoOtp,intentos_fallidos AS intentosFallidos,
+        (expira_en>=NOW()) AS vigente
+       FROM cambios_correo_admin WHERE usuario_id=? FOR UPDATE`,
+      [req.usuario!.id]
+    );
+    if (!cambios.length) {
+      await conexion.rollback();
+      res.status(404).json({ mensaje: 'No hay un cambio de correo pendiente.' });
+      return;
+    }
+
+    const cambio = cambios[0];
+    if (!cambio.vigente) {
+      await conexion.query('DELETE FROM cambios_correo_admin WHERE usuario_id=?', [req.usuario!.id]);
+      await conexion.commit();
+      res.status(410).json({ mensaje: 'El código expiró. Solicite otro para continuar.' });
+      return;
+    }
+    if (cambio.codigoOtp !== codigo) {
+      const intentos = Number(cambio.intentosFallidos) + 1;
+      if (intentos >= 3) {
+        await conexion.query('DELETE FROM cambios_correo_admin WHERE usuario_id=?', [req.usuario!.id]);
+      } else {
+        await conexion.query(
+          'UPDATE cambios_correo_admin SET intentos_fallidos=? WHERE usuario_id=?',
+          [intentos, req.usuario!.id]
+        );
+      }
+      await conexion.commit();
+      res.status(intentos >= 3 ? 403 : 401).json({
+        mensaje: intentos >= 3 ? 'Se agotaron los intentos; solicite un código nuevo.' : `Código incorrecto (${intentos}/3).`,
+      });
+      return;
+    }
+
+    await conexion.query(
+      `UPDATE usuarios SET email=?,codigo_otp=NULL,otp_expira_en=NULL,intentos_fallidos=0
+       WHERE id=? AND rol='ADMINISTRADOR' AND activo=1`,
+      [cambio.emailNuevo, req.usuario!.id]
+    );
+    await conexion.query('DELETE FROM cambios_correo_admin WHERE usuario_id=?', [req.usuario!.id]);
+    const [usuarios] = await conexion.query<UsuarioAdminRow[]>(
+      `SELECT u.id,u.nombre,u.email,u.rol,u.tipo_cuenta AS tipoCuenta,
+        u.licenciatura_id AS licenciaturaId,l.nombre AS licenciaturaNombre,u.activo,u.bloqueado
+       FROM usuarios u LEFT JOIN licenciaturas l ON l.id=u.licenciatura_id
+       WHERE u.id=? AND u.rol='ADMINISTRADOR' AND u.activo=1`,
+      [req.usuario!.id]
+    );
+    if (!usuarios.length) throw new Error('La cuenta de Administrador ya no está activa.');
+    await conexion.commit();
+
+    const usuario = usuarios[0];
+    const payload: PayloadUsuario = {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol,
+      tipoCuenta: usuario.tipoCuenta,
+      licenciaturaId: usuario.licenciaturaId,
+      licenciaturaNombre: usuario.licenciaturaNombre,
+      activo: Boolean(usuario.activo),
+      bloqueado: Boolean(usuario.bloqueado),
+    };
+    res.json({ token: firmarToken(payload), usuario: payload, mensaje: 'Correo del Administrador actualizado.' });
+  } catch (error) {
+    await conexion.rollback();
+    const detalle = error as { code?: string };
+    if (detalle.code === 'ER_DUP_ENTRY') {
+      res.status(409).json({ mensaje: 'Ese correo ya está asociado a otra cuenta.' });
+      return;
+    }
+    console.error('Error al verificar el nuevo correo del Administrador:', error);
+    res.status(500).json({ mensaje: 'No se pudo actualizar el correo del Administrador.' });
+  } finally {
+    conexion.release();
+  }
+});
+
+router.post('/admin/correo/prueba', requerirRoles('ADMINISTRADOR'), async (req: AuthRequest, res: Response) => {
+  try {
+    const enviado = await enviarCorreo(
+      req.usuario!.email,
+      'Prueba de correo - Seguimiento a la Mejora Continua',
+      'El envío de correo SMTP del Sistema de Seguimiento a la Mejora Continua funciona.'
+    );
+    if (!enviado) {
+      res.status(503).json({ mensaje: 'SMTP no está configurado; no se envió el correo de prueba.' });
+      return;
+    }
+    res.json({ mensaje: `Correo de prueba enviado a ${req.usuario!.email}.` });
+  } catch (error) {
+    console.error('Error al enviar correo de prueba:', error);
+    res.status(502).json({ mensaje: 'Falló el envío de prueba. Revise la configuración SMTP del backend.' });
+  }
+});
 
 function esRolAlta(rol: unknown): rol is RolAlta {
   return rol === 'PLANEADOR' || rol === 'JEFATURA';

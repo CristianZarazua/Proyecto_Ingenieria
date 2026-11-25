@@ -15,7 +15,7 @@ type RolCuentaGestionada = Extract<RolUsuario, 'JEFATURA' | 'PLANEADOR'>;
 
 export default function AdministracionPage() {
   const [sesion, setSesion] = useState<Usuario | null>(null);
-  const [tab, setTab] = useState<'cuentas' | 'catalogos' | 'ciclos'>('cuentas');
+  const [tab, setTab] = useState<'cuentas' | 'catalogos' | 'ciclos' | 'correo'>('cuentas');
   const [modoAlta, setModoAlta] = useState<'individual' | 'lote'>('individual');
 
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -25,6 +25,10 @@ export default function AdministracionPage() {
 
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
+  const [correoNuevoAdmin, setCorreoNuevoAdmin] = useState('');
+  const [codigoCambioCorreo, setCodigoCambioCorreo] = useState('');
+  const [esperandoCodigoCorreo, setEsperandoCodigoCorreo] = useState(false);
+  const [codigoCambioSimulado, setCodigoCambioSimulado] = useState<string | null>(null);
 
   // Formulario de cuentas
   const [editUsuarioId, setEditUsuarioId] = useState<number | null>(null);
@@ -166,6 +170,49 @@ export default function AdministracionPage() {
     }
   };
 
+  const solicitarCambioCorreoAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMensaje('');
+    setCodigoCambioSimulado(null);
+    try {
+      const resultado = await apiSistema.solicitarCambioCorreoAdmin(correoNuevoAdmin);
+      setEsperandoCodigoCorreo(true);
+      setMensaje(resultado.mensaje);
+      setCodigoCambioSimulado(resultado.codigoSimulado || null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo solicitar el cambio de correo.');
+    }
+  };
+
+  const confirmarCambioCorreoAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMensaje('');
+    try {
+      const resultado = await apiSistema.verificarCambioCorreoAdmin(codigoCambioCorreo);
+      setSesion(resultado.usuario);
+      setCorreoNuevoAdmin('');
+      setCodigoCambioCorreo('');
+      setEsperandoCodigoCorreo(false);
+      setCodigoCambioSimulado(null);
+      setMensaje(resultado.mensaje);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo verificar el nuevo correo.');
+    }
+  };
+
+  const probarCorreoAdmin = async () => {
+    setError('');
+    setMensaje('');
+    try {
+      const resultado = await apiSistema.probarCorreoAdmin();
+      setMensaje(resultado.mensaje);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo enviar el correo de prueba.');
+    }
+  };
+
   const alternarEstadoUsuario = async (u: Usuario) => {
     setError('');
     setMensaje('');
@@ -270,6 +317,11 @@ export default function AdministracionPage() {
         <button onClick={() => setTab('ciclos')} className={`rounded px-4 py-2 text-xs font-semibold ${pestanaActiva === 'ciclos' ? 'bg-[#0B2545] text-white' : 'bg-white text-slate-700 border'}`}>
           Licenciaturas y ciclos
         </button>
+        {sesion.rol === 'ADMINISTRADOR' && (
+          <button onClick={() => setTab('correo')} className={`rounded px-4 py-2 text-xs font-semibold ${tab === 'correo' ? 'bg-[#0B2545] text-white' : 'bg-white text-slate-700 border'}`}>
+            Correo y notificaciones
+          </button>
+        )}
       </div>
 
       {error && <div className="rounded border border-red-300 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</div>}
@@ -444,6 +496,82 @@ export default function AdministracionPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {tab === 'correo' && sesion.rol === 'ADMINISTRADOR' && (
+        <div className="space-y-5">
+          <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm">
+            <div>
+              <h2 className="font-bold text-slate-800">Correo de acceso del Administrador</h2>
+              <p className="mt-1 text-xs text-slate-600">
+                Correo actual: <span className="font-semibold">{sesion.email}</span>. Para cambiarlo, enviaremos un código al nuevo correo institucional y solo se actualizará después de verificarlo.
+              </p>
+            </div>
+            {!esperandoCodigoCorreo ? (
+              <form onSubmit={solicitarCambioCorreoAdmin} className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="email"
+                  maxLength={150}
+                  required
+                  value={correoNuevoAdmin}
+                  onChange={(e) => setCorreoNuevoAdmin(e.target.value)}
+                  placeholder="nuevo@pcpuma.acatlan.unam.mx"
+                  className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2"
+                />
+                <button type="submit" className="rounded bg-[#0B2545] px-4 py-2 text-xs font-semibold text-white">
+                  Enviar código
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={confirmarCambioCorreoAdmin} className="space-y-3">
+                <p className="text-xs text-slate-600">Ingresa el código de 6 dígitos enviado a {correoNuevoAdmin}.</p>
+                {codigoCambioSimulado && (
+                  <p className="rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+                    Modo local sin SMTP: código de prueba <strong className="font-mono">{codigoCambioSimulado}</strong>
+                  </p>
+                )}
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    required
+                    value={codigoCambioCorreo}
+                    onChange={(e) => setCodigoCambioCorreo(e.target.value.replace(/\D/g, ''))}
+                    placeholder="000000"
+                    className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2 font-mono"
+                  />
+                  <button type="submit" className="rounded bg-emerald-700 px-4 py-2 text-xs font-semibold text-white">
+                    Verificar y cambiar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEsperandoCodigoCorreo(false);
+                      setCodigoCambioCorreo('');
+                      setCodigoCambioSimulado(null);
+                    }}
+                    className="rounded border px-4 py-2 text-xs font-semibold text-slate-700"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+
+          <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-sm">
+            <div>
+              <h2 className="font-bold text-slate-800">Prueba de envío SMTP</h2>
+              <p className="mt-1 text-xs text-slate-600">
+                Envía un mensaje de prueba a {sesion.email}. El remitente y la contraseña SMTP se configuran únicamente en <code>backend/.env</code>; nunca se guardan en la interfaz.
+              </p>
+            </div>
+            <button type="button" onClick={probarCorreoAdmin} className="rounded bg-[#134074] px-4 py-2 text-xs font-semibold text-white">
+              Enviar correo de prueba
+            </button>
+          </section>
         </div>
       )}
 

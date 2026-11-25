@@ -8,6 +8,7 @@ import planesRoutes from './routes/planes.routes.js';
 import borradoresRoutes from './routes/borradores.routes.js';
 import seguimientoRoutes from './routes/seguimiento.routes.js';
 import reportesRoutes from './routes/reportes.routes.js';
+import { procesarRecordatoriosSemanales } from './services/notificacionesEmail.js';
 dotenv.config();
 const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
@@ -22,3 +23,7 @@ app.use('/api/reportes', reportesRoutes);
 const port = Number(process.env.PORT) || 3001;
 const host = process.env.HOST || '127.0.0.1';
 app.listen(port, host, () => console.log(`API lista en ${host}:${port}`));
+void procesarRecordatoriosSemanales();
+setInterval(() => {
+  void procesarRecordatoriosSemanales();
+}, 60_000);

@@ -8,6 +8,7 @@ Este directorio contiene el esquema y los datos de ejemplo del Sistema de Seguim
 - `semilla_sprint1.sql`: carga licenciaturas, cuentas de demostración, catálogos y ciclos de ejemplo. Usar después del esquema inicial.
 - `migracion_informes_borradores_evidencias.sql`: actualiza una base existente de forma aditiva, agrega fechas finales de acreditación y las tablas para borradores, seguimiento y evidencias. No elimina datos.
 - `migracion_rol_planeador.sql`: agrega el rol `PLANEADOR` al catálogo de roles sin modificar las cuentas existentes.
+- `migracion_notificaciones_correo.sql`: agrega las tablas para validar cambios al correo de Administrador y evitar recordatorios semanales duplicados.
 - `provisionar_cuenta_prueba_planeador.sql`: crea la cuenta `planeador.planeacion@pcpuma.acatlan.unam.mx` si no existe. Usar únicamente en desarrollo o pruebas, después de agregar el rol Planeador.
 
 ## Actualizar una base existente
@@ -17,6 +18,7 @@ Haz un respaldo antes de cualquier migración. Desde la raíz del repositorio:
 ```bash
 sudo mariadb < base-de-datos/migracion_informes_borradores_evidencias.sql
 sudo mariadb < base-de-datos/migracion_rol_planeador.sql
+sudo mariadb < base-de-datos/migracion_notificaciones_correo.sql
 ```
 
 La migración completa las fechas finales existentes con un periodo de cinco años desde la fecha de acreditación. No vuelvas a ejecutar el esquema inicial sobre una base que contenga información.
@@ -45,6 +47,12 @@ producción, todas las cuentas requieren OTP; en desarrollo, el Administrador
 puede entrar sin OTP para pruebas. Planeador puede consultar
 todas las licenciaturas, validar o devolver Planes e Informes y administrar
 ciclos y catálogos. Jefatura captura únicamente para su licenciatura.
+
+Para probar OTP del Administrador en desarrollo, configura
+`FORCE_ADMIN_OTP=true` en `backend/.env`. Con SMTP vacío el código se simula
+localmente; los correos reales requieren SMTP válido. La migración de
+notificaciones agrega el almacenamiento necesario para verificar cambios al
+correo del Administrador y evitar recordatorios semanales duplicados.
 
 ## Estados
 

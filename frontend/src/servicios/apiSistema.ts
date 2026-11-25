@@ -98,6 +98,27 @@ export const apiSistema = {
     localStorage.removeItem(KEY_USUARIO);
   },
 
+  solicitarCambioCorreoAdmin(email: string): Promise<{ mensaje: string; codigoSimulado?: string }> {
+    return peticion('/admin/correo/cambio', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async verificarCambioCorreoAdmin(codigo: string): Promise<{ mensaje: string; usuario: Usuario }> {
+    const res = await peticion<{ mensaje: string; token: string; usuario: Usuario }>(
+      '/admin/correo/cambio/verificar',
+      { method: 'POST', body: JSON.stringify({ codigo }) }
+    );
+    localStorage.setItem(KEY_TOKEN, res.token);
+    localStorage.setItem(KEY_USUARIO, JSON.stringify(res.usuario));
+    return res;
+  },
+
+  probarCorreoAdmin(): Promise<{ mensaje: string }> {
+    return peticion('/admin/correo/prueba', { method: 'POST' });
+  },
+
   obtenerUsuarios(): Promise<Usuario[]> {
     return peticion<Usuario[]>('/usuarios');
   },

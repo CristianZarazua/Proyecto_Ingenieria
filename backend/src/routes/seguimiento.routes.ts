@@ -8,6 +8,7 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { PDFDocument } from 'pdf-lib';
 import { pool } from '../config/db.js';
 import { AuthRequest, verificarToken, requerirRoles } from '../middlewares/auth.js';
+import { notificarJefaturas, notificarPlaneacion } from '../services/notificacionesEmail.js';
 
 const router = Router();
 const limiteArchivo = 20 * 1024 * 1024;
@@ -50,6 +51,7 @@ interface EvidenciaRow extends RowDataPacket {
 
 interface AccesoRow extends RowDataPacket {
   licenciaturaId: number;
+  licenciaturaNombre: string;
   estatusPlan: string;
   estatusInforme: EstadoInforme | null;
 }
@@ -63,9 +65,10 @@ function directorioEvidencias(): string {
 
 async function obtenerAcceso(recomendacionId: number, res: Response, req: AuthRequest): Promise<AccesoRow | null> {
   const [rows] = await pool.query<AccesoRow[]>(
-    `SELECT rp.licenciatura_id AS licenciaturaId, rp.estatus AS estatusPlan,
+    `SELECT rp.licenciatura_id AS licenciaturaId,l.nombre AS licenciaturaNombre,rp.estatus AS estatusPlan,
       sr.estatus AS estatusInforme
      FROM recomendaciones_plan rp
+     JOIN licenciaturas l ON l.id=rp.licenciatura_id
      LEFT JOIN seguimiento_recomendaciones sr ON sr.recomendacion_id=rp.id
      WHERE rp.id=?`,
     [recomendacionId]
@@ -238,7 +241,15 @@ router.patch('/:recomendacionId/estado', async (req: AuthRequest, res: Response)
         [siguiente, observaciones || null, req.usuario!.id, recomendacionId]
       );
       if (!result.affectedRows) { res.status(409).json({ mensaje: 'El Informe cambió; actualiza la pantalla.' }); return; }
-      res.json({ mensaje: siguiente === 'VALIDADO' ? 'Informe validado.' : 'Informe devuelto con observaciones.' });
+      const estadoTexto = siguiente === 'VALIDADO' ? 'validado' : 'devuelto';
+      const aviso = await notificarJefaturas(
+        acceso.licenciaturaId,
+        `Informe ${estadoTexto} - Seguimiento a la Mejora Continua`,
+        `El Informe de la recomendación ${recomendacionId} de ${acceso.licenciaturaNombre} fue ${estadoTexto} por Planeación.${observaciones ? `\nObservaciones: ${observaciones}` : ''}`
+      );
+      res.json({
+        mensaje: `${siguiente === 'VALIDADO' ? 'Informe validado.' : 'Informe devuelto con observaciones.'}${aviso ? ` ${aviso}` : ''}`,
+      });
       return;
     }
 
@@ -254,7 +265,11 @@ router.patch('/:recomendacionId/estado', async (req: AuthRequest, res: Response)
       [req.usuario!.id, recomendacionId]
     );
     if (!result.affectedRows) { res.status(409).json({ mensaje: 'El Informe cambió; actualiza la pantalla.' }); return; }
-    res.json({ mensaje: 'Informe enviado a Planeación.' });
+    const aviso = await notificarPlaneacion(
+      'Nuevo Informe enviado a Planeación - Seguimiento a la Mejora Continua',
+      `El Informe de la recomendación ${recomendacionId} de ${acceso.licenciaturaNombre} fue enviado a Planeación.`
+    );
+    res.json({ mensaje: `Informe enviado a Planeación.${aviso ? ` ${aviso}` : ''}` });
   } catch (error) {
     console.error(error);
     res.status(500).json({ mensaje: 'No se pudo cambiar el estado del Informe.' });

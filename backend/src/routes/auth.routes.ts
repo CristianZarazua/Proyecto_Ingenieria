@@ -15,7 +15,9 @@ router.post('/solicitar-acceso', async (req: Request, res: Response) => {
     const u = rows[0];
     if (!u.activo || u.bloqueado) { res.status(403).json({ mensaje: 'Cuenta inactiva o bloqueada.' }); return; }
     const p: PayloadUsuario = { id: u.id, nombre: u.nombre, email: u.email, rol: u.rol, tipoCuenta: u.tipo_cuenta, licenciaturaId: u.licenciatura_id, licenciaturaNombre: u.licNombre || null, activo: true, bloqueado: false };
-    if (u.rol === 'ADMINISTRADOR' && process.env.NODE_ENV === 'development') {
+    if (u.rol === 'ADMINISTRADOR' &&
+      process.env.NODE_ENV === 'development' &&
+      process.env.FORCE_ADMIN_OTP !== 'true') {
       await pool.query('UPDATE usuarios SET intentos_fallidos=0, codigo_otp=NULL, otp_expira_en=NULL WHERE id=?', [u.id]);
       res.json({ requiereOtp: false, token: firmarToken(p), usuario: p });
       return;

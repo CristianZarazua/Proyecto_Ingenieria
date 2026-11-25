@@ -2,12 +2,14 @@ import { Router, Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db.js';
 import { AuthRequest, verificarToken, requerirRoles } from '../middlewares/auth.js';
+import { notificarJefaturas, notificarPlaneacion } from '../services/notificacionesEmail.js';
 const router = Router();
 router.use(verificarToken);
 
 type EstadoPlan = 'BORRADOR' | 'ENVIADO' | 'DEVUELTO' | 'VALIDADO';
 interface EstadoPlanRow extends RowDataPacket {
   licenciaturaId: number;
+  licenciaturaNombre: string;
   estatus: EstadoPlan;
 }
 
@@ -58,7 +60,8 @@ router.patch('/:id/estado', async (req: AuthRequest, res: Response) => {
   try {
     const usuario = req.usuario!;
     const [rows] = await pool.query<EstadoPlanRow[]>(
-      'SELECT licenciatura_id AS licenciaturaId, estatus FROM recomendaciones_plan WHERE id=?',
+      `SELECT rp.licenciatura_id AS licenciaturaId,l.nombre AS licenciaturaNombre,rp.estatus
+       FROM recomendaciones_plan rp JOIN licenciaturas l ON l.id=rp.licenciatura_id WHERE rp.id=?`,
       [id]
     );
     if (!rows.length) { res.status(404).json({ mensaje: 'Recomendación no encontrada.' }); return; }
@@ -81,7 +84,15 @@ router.patch('/:id/estado', async (req: AuthRequest, res: Response) => {
         [siguiente, observaciones || null, id]
       );
       if (!result.affectedRows) { res.status(409).json({ mensaje: 'La recomendación cambió; actualice la pantalla e intente de nuevo.' }); return; }
-      res.json({ mensaje: siguiente === 'VALIDADO' ? 'Recomendación validada.' : 'Recomendación devuelta a la jefatura.' });
+      const estadoTexto = siguiente === 'VALIDADO' ? 'validada' : 'devuelta';
+      const aviso = await notificarJefaturas(
+        rows[0].licenciaturaId,
+        `Plan ${estadoTexto} - Seguimiento a la Mejora Continua`,
+        `La recomendación ${id} del Plan de ${rows[0].licenciaturaNombre} fue ${estadoTexto} por Planeación.${observaciones ? `\nObservaciones: ${observaciones}` : ''}`
+      );
+      res.json({
+        mensaje: `${siguiente === 'VALIDADO' ? 'Recomendación validada.' : 'Recomendación devuelta a la jefatura.'}${aviso ? ` ${aviso}` : ''}`,
+      });
       return;
     }
 
@@ -98,7 +109,11 @@ router.patch('/:id/estado', async (req: AuthRequest, res: Response) => {
         [id, usuario.licenciaturaId]
       );
       if (!result.affectedRows) { res.status(409).json({ mensaje: 'La recomendación cambió; actualice la pantalla e intente de nuevo.' }); return; }
-      res.json({ mensaje: 'Recomendación enviada a Planeación.' });
+      const aviso = await notificarPlaneacion(
+        'Nuevo Plan enviado a Planeación - Seguimiento a la Mejora Continua',
+        `La recomendación ${id} del Plan de ${rows[0].licenciaturaNombre} fue enviada a Planeación.`
+      );
+      res.json({ mensaje: `Recomendación enviada a Planeación.${aviso ? ` ${aviso}` : ''}` });
       return;
     }
 
@@ -126,7 +141,11 @@ router.patch('/:id/estado', async (req: AuthRequest, res: Response) => {
       [recomendacion, acciones, meta, areaResponsableId, fechaCumplimiento, id, usuario.licenciaturaId]
     );
     if (!result.affectedRows) { res.status(409).json({ mensaje: 'La recomendación cambió; actualice la pantalla e intente de nuevo.' }); return; }
-    res.json({ mensaje: 'Correcciones guardadas y recomendación reenviada a Planeación.' });
+    const aviso = await notificarPlaneacion(
+      'Plan reenviado a Planeación - Seguimiento a la Mejora Continua',
+      `La recomendación ${id} del Plan de ${rows[0].licenciaturaNombre} fue corregida y reenviada a Planeación.`
+    );
+    res.json({ mensaje: `Correcciones guardadas y recomendación reenviada a Planeación.${aviso ? ` ${aviso}` : ''}` });
   } catch (e) {
     console.error(e);
     res.status(500).json({ mensaje: 'Error al actualizar el estado de la recomendación.' });

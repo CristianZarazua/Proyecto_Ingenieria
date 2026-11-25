@@ -114,6 +114,7 @@ Proyecto_Ingenieria/
 │   ├── semilla_sprint1.sql                    # Datos iniciales de ejemplo
 │   ├── migracion_informes_borradores_evidencias.sql # Migración aditiva para una base existente
 │   ├── migracion_rol_planeador.sql            # Agrega el rol Planeador a una base existente
+│   ├── migracion_notificaciones_correo.sql    # Verificación de correo y recordatorios semanales
 │   └── provisionar_cuenta_prueba_planeador.sql # Cuenta de prueba, solo para desarrollo
 ├── backend/
 │   ├── .env.example                           # Plantilla de variables de entorno (BD, SMTP, puerto y JWT)
@@ -122,7 +123,7 @@ Proyecto_Ingenieria/
 │       ├── index.ts                           # Servidor Express, CORS, endpoint /api/health y montaje de rutas
 │       ├── config/
 │       │   ├── db.ts                          # Pool de conexiones hacia MariaDB
-│       │   └── mailer.ts                      # Envío SMTP; el código simulado solo se habilita en desarrollo
+│       │   └── mailer.ts                      # Envío SMTP de OTP y notificaciones
 │       ├── middlewares/
 │       │   └── auth.ts                        # Verificación de tokens JWT y control de acceso por rol
 │       ├── utils/
@@ -135,6 +136,7 @@ Proyecto_Ingenieria/
 │       │   ├── seguimiento.routes.ts          # Avance, estados y evidencias del Informe
 │       │   └── reportes.routes.ts             # Descarga de reportes por ciclo
 │       └── services/
+│           ├── notificacionesEmail.ts         # Avisos de envío/revisión y recordatorios semanales
 │           └── reportes.ts                    # Generación de Word y PDF desde los mismos datos
 ├── frontend/
 │   ├── next.config.ts                         # Proxy local de /api/* hacia el backend
@@ -177,6 +179,7 @@ Proyecto_Ingenieria/
    ```bash
    sudo mariadb < base-de-datos/migracion_informes_borradores_evidencias.sql
    sudo mariadb < base-de-datos/migracion_rol_planeador.sql
+   sudo mariadb < base-de-datos/migracion_notificaciones_correo.sql
    ```
 2. **Backend (Puerto 3001):**
    ```bash
@@ -185,6 +188,12 @@ Proyecto_Ingenieria/
    npm install
    npm run dev
    ```
+   Para probar correo con Google Workspace, configura `SMTP_HOST=smtp.gmail.com`,
+   `SMTP_PORT=587`, `SMTP_USER` y `SMTP_FROM` con la cuenta institucional, y
+   `SMTP_PASS` con una contraseña de aplicación autorizada por la organización.
+   No uses la contraseña normal ni la compartas por chat. En desarrollo,
+   `FORCE_ADMIN_OTP=true` habilita OTP para Administrador; sin SMTP se muestra
+   un código simulado y no se envía correo real.
 3. **Frontend (Puerto 3000):**
    ```bash
    cd frontend
@@ -193,6 +202,13 @@ Proyecto_Ingenieria/
    ```
 
 Para validar el backend, ejecuta `npm run build` desde `backend/`. El frontend tiene errores de TypeScript preexistentes en `ModalAjusteFecha.tsx` y `datosIniciales.ts`; están fuera de las funcionalidades descritas arriba.
+
+Al enviar o revisar una recomendación del Plan o del Informe, el sistema avisa
+por correo a Planeación o a las Jefaturas activas de la licenciatura. Los
+recordatorios de pendientes se procesan los lunes a las 9:00 (hora de Ciudad
+de México) mientras el backend está en ejecución; SMTP debe estar configurado.
+El Administrador puede cambiar su correo desde Administración, verificando el
+nuevo correo mediante OTP, y enviar un correo de prueba a su dirección actual.
 
 ### HTTPS en producción
 
